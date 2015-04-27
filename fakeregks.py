@@ -9,6 +9,7 @@ import os
 from optparse import Option
 from optparse import OptionParser
 import random
+import uuid
 
 sys.path.append("/usr/share/rhn/")
 
@@ -17,6 +18,7 @@ from up2date_client import hardware
 from up2date_client import pkgUtils
 from up2date_client import up2dateErrors
 from up2date_client import rhncli
+from suseRegister.info import getProductProfile as get_suse_product_profile
 
 
 class CMDBProfile(object):
@@ -116,6 +118,18 @@ class VirtualRegistration(object):
         rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(serverfqdn))
         rhnreg.getCaps()
 
+        def _getProductProfile():
+            '''
+            Mocker. Needs to be saved to the SQLite!
+            '''
+            profile = get_suse_product_profile()
+            profile['guid'] = uuid.uuid4().hex
+            profile['secret'] = uuid.uuid4().hex
+
+            return profile
+
+        rhnreg.getProductProfile = _getProductProfile
+
     def _initialize(self):
         """
         Initialize command line options.
@@ -141,6 +155,7 @@ class VirtualRegistration(object):
         Register one system based on profile.
         """
         sid = None
+        rhnreg.cfg.set("systemIdPath", "/etc/sysconfig/rhn/systemid-{0}".format(profile.id))
         try:
             sid = rhnreg.registerSystem(token=self.options.key,
                                         profileName=profile.id,
@@ -153,6 +168,8 @@ class VirtualRegistration(object):
             print "Registration error: {0}".format(e.errmsg)
             return
 
+        rhnreg.writeSystemId(sid)
+        rhnreg.cfg.save()
         rhnreg.sendHardware(sid, profile.hardware)
         rhnreg.sendPackages(sid, profile.packages)
         rhnreg.sendVirtInfo(sid)
