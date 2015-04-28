@@ -340,19 +340,26 @@ class CheckCli(rhncli.RhnCli):
 
     @staticmethod
     def __check_instance_lock():
-        pass
+        """
+        Is called by a real rhn_check. Here does nothing.
+        """
 
     @staticmethod
     def __check_has_system_id():
-        """ Retrieve the system_id. This is required. """
-        if not up2dateAuth.getSystemId():
-            print "ERROR: unable to read system id."
+        """
+        Is called by a real rhn_check. Here does nothing.
+        """
 
     @staticmethod
     def __check_rhn_disabled():
-        pass
+        """
+        Is called by a real rhn_check. Here does nothing.
+        """
 
     def get_server(self, refreshCallback=None, serverOverride=None, timeout=None):
+        """
+        Moved from rpcServer.
+        """
         ca = self.cfg["sslCACert"]
         if isinstance(ca, basestring):
             ca = [ca]
