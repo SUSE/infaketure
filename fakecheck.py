@@ -106,7 +106,7 @@ class CheckCli(rhncli.RhnCli):
 
         s = rhnserver.RhnServer()
         if s.capabilities.hasCapability('staging_content', 1) and self.cfg['stagingContent'] != 0:
-             self.__check_future_actions()
+            self.__check_future_actions()
 
     def __get_action(self, status_report):
         try:
