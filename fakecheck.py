@@ -53,6 +53,8 @@ from up2date_client import clientCaps
 from up2date_client import capabilities
 from up2date_client import rhncli, rhnserver
 
+import fakeactions
+
 from rhn import rhnLockfile
 from rhn import rpclib
 del sys.modules['sgmlop']
@@ -307,10 +309,8 @@ class CheckCli(rhncli.RhnCli):
 
     @staticmethod
     def __do_call(method, params, kwargs={}):
-        log.log_debug("do_call ", method, params, kwargs)
-
-        method = getMethod.getMethod(method, "/usr/share/rhn/", "actions")
-        retval = method(*params, **kwargs)
+        retval = fakeactions.Dispatcher(method)(*params, **kwargs)
+        print "Calling '{0}', return: {1}".format(method, retval)
 
         return retval
 
