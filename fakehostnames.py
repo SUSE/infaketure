@@ -60,6 +60,10 @@ class FakeNames(object):
             return pattern.format(self._stub, self._idx - 1)
 
         # Yay!
-        self._history.append(pattern.format(*self.ubuntify()))
+        name = pattern.format(*self.ubuntify())
+        if name in self._history:
+            while name not in self._history:
+                name = pattern.format(*self.ubuntify())
+        self._history.append(name)
 
         return self._history[-1]
