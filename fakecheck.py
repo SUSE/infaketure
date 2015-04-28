@@ -164,7 +164,8 @@ class CheckCli(rhncli.RhnCli):
         parser.close()
         params = decoder.close()
         method = decoder.getmethodname()
-        return (method, params)
+
+        return method, params
 
     def submit_response(self, action_id, status, message, data):
         """ Submit a response for an action_id. """
