@@ -165,6 +165,7 @@ class VirtualRegistration(object):
         opt = OptionParser(version="Bloody Alpha, 0.1")
         opt.add_option("--activationkey", action="store", dest="key", help="Specify an activation key")
         opt.add_option("--sslCACert", action="store", dest="cacert", help="Specify a file to use as the ssl CA cert")
+
         self.options, self.args = opt.parse_args()
 
         # Check the required parameters
@@ -176,7 +177,8 @@ class VirtualRegistration(object):
         if self.options.cacert:
             rhnreg.cfg.set("sslCACert", self.options.cacert)
         if not os.path.exists(rhnreg.cfg["sslCACert"]):
-            raise VirtualRegistration.VRException("SSL CA Certificate was not found at {0}".format(rhnreg.cfg["sslCACert"]))
+            raise VirtualRegistration.VRException(
+                "SSL CA Certificate was not found at {0}".format(rhnreg.cfg["sslCACert"]))
 
     def register(self, profile):
         """
@@ -205,7 +207,9 @@ class VirtualRegistration(object):
         rhnreg.sendPackages(sid, profile.packages)
         rhnreg.sendVirtInfo(sid)
         rhnreg.startRhnsd()
+
         fakecheck.CheckCli(rhnreg.cfg, sid).main()
+
 
 if __name__ == '__main__':
     try:
