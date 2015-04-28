@@ -13,6 +13,7 @@ import uuid
 from xml.dom import minidom as dom
 import fakecheck
 import fakehostnames
+import fakestore
 
 sys.path.append("/usr/share/rhn/")
 
@@ -163,7 +164,7 @@ class VirtualRegistration(object):
         """
         Initialize command line options.
         """
-        self._dbstore_file = os.path.join(os.path.abspath("."), "fakestore.db")
+        _dbstore_file = os.path.join(os.path.abspath("."), "store.db")
         opt = OptionParser(version="Bloody Alpha, 0.1")
         opt.add_option("-m", "--manager-hostname", action="store", dest="fqdn",
                        help="Specify an activation key")
@@ -179,7 +180,7 @@ class VirtualRegistration(object):
                             "or 'test' as base name.")
         opt.add_option("-d", "--database-file", action="store", dest="dbfile",
                        help="Specify a path to SQLite3 database. "
-                            "Default is '{0}'.".format(self._dbstore_file))
+                            "Default is '{0}'.".format(_dbstore_file))
 
         self.options, self.args = opt.parse_args()
 
@@ -201,8 +202,11 @@ class VirtualRegistration(object):
             raise VirtualRegistration.VRException("Wrong amount of fake hosts: {0}".format(self.options.amount))
 
         if self.options.dbfile:
-            self._dbstore_file = self.options.dbfile
+            _dbstore_file = self.options.dbfile
 
+        print "DB:", _dbstore_file
+        self.db = fakestore.DBStorage(_dbstore_file)
+        self.db.open()
 
     def register(self, profile):
         """
@@ -210,7 +214,6 @@ class VirtualRegistration(object):
         """
         sid = None
         xmldata = XMLData()
-        #rhnreg.cfg.set("systemIdPath", "/etc/sysconfig/rhn/systemid-{0}".format(profile.id))
         try:
             sid = rhnreg.registerSystem(token=self.options.key,
                                         profileName=profile.id,
@@ -218,6 +221,10 @@ class VirtualRegistration(object):
             xmldata.load(sid)
             print "Registered {0} with System ID {1}".format(xmldata.get_member('profile_name'),
                                                              xmldata.get_member('system_id'))
+            host_id = self.db.get_next_id("hosts") + 1
+            self.db.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
+                                   (host_id, xmldata.get_member("system_id"), xmldata.get_member("profile_name"), sid,))
+            self.db.connection.commit()
         except (up2dateErrors.AuthenticationTicketError,
                 up2dateErrors.RhnUuidUniquenessError,
                 up2dateErrors.CommunicationError,
@@ -234,12 +241,14 @@ class VirtualRegistration(object):
 
 
 if __name__ == '__main__':
-    try:
+    #try:
+    if 1:
         fh = fakehostnames.FakeNames(fqdn=True)
         vr = VirtualRegistration()
         for idx in range(vr.amount):
             vr.register(CMDBProfile(fh(), idx=idx))
-    except VirtualRegistration.VRException as ex:
-        print "Error:\n  {0}\n".format(ex)
-    except Exception as ex:
-        raise ex
+        vr.db.close()
+    #except VirtualRegistration.VRException as ex:
+    #    print "Error:\n  {0}\n".format(ex)
+    #except Exception as ex:
+    #    raise ex
