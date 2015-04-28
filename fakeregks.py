@@ -181,11 +181,13 @@ class VirtualRegistration(object):
         opt.add_option("-d", "--database-file", action="store", dest="dbfile",
                        help="Specify a path to SQLite3 database. "
                             "Default is '{0}'.".format(_dbstore_file))
+        opt.add_option("-r", "--refresh", action="store_true", dest="refresh",
+                       help="Run rhn_check on registered systems.")
 
         self.options, self.args = opt.parse_args()
 
         # Check the required parameters
-        if not self.options.key or not self.options.fqdn:
+        if not self.options.refresh and (not self.options.key or not self.options.fqdn):
             sys.argv.append("-h")
             opt.parse_args()
 
@@ -204,9 +206,42 @@ class VirtualRegistration(object):
         if self.options.dbfile:
             _dbstore_file = self.options.dbfile
 
-        print "DB:", _dbstore_file
         self.db = fakestore.DBStorage(_dbstore_file)
         self.db.open()
+
+    def main(self):
+        """
+        Main
+        """
+        if self.options.refresh:
+            self.refresh()
+        else:
+            for idx in range(vr.amount):
+                vr.register(CMDBProfile(fh(), idx=idx))
+
+        vr.db.close()
+
+    def _get_host_config(self, host_id):
+        """
+        Get up2date configuration for the host by db ID.
+        """
+        self.db.cursor.execute("SELECT BODY FROM configs WHERE HID = ?", (host_id,))
+        for cfg in self.db.cursor.fetchall():
+            return eval(cfg[0])
+
+    def refresh(self):
+        """
+        Refresh profiles by running rhn_check over them.
+        """
+        xmldata = XMLData()
+        self.db.cursor.execute("SELECT ID, SID, SID_XML FROM hosts")
+        for host_id, sid_id, sid in self.db.cursor.fetchall():
+            xmldata.load(sid)
+            print "Refreshing {0} ({1})".format(xmldata.get_member("profile_name"), sid_id)
+            #try:
+            fakecheck.CheckCli(self._get_host_config(host_id), sid).main()
+            #except Exception as ex:
+            #    print "REFRESH WARNING:", ex
 
     def register(self, profile):
         """
@@ -254,9 +289,7 @@ if __name__ == '__main__':
     if 1:
         fh = fakehostnames.FakeNames(fqdn=True)
         vr = VirtualRegistration()
-        for idx in range(vr.amount):
-            vr.register(CMDBProfile(fh(), idx=idx))
-        vr.db.close()
+        vr.main()
     #except VirtualRegistration.VRException as ex:
     #    print "Error:\n  {0}\n".format(ex)
     #except Exception as ex:
