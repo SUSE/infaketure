@@ -10,6 +10,7 @@ from optparse import Option
 from optparse import OptionParser
 import random
 import uuid
+import fakecheck
 
 sys.path.append("/usr/share/rhn/")
 
@@ -174,7 +175,7 @@ class VirtualRegistration(object):
         rhnreg.sendPackages(sid, profile.packages)
         rhnreg.sendVirtInfo(sid)
         rhnreg.startRhnsd()
-        os.system("/usr/sbin/rhn_check")
+        fakecheck.CheckCli(rhnreg.cfg, sid).main()
 
 if __name__ == '__main__':
     try:
