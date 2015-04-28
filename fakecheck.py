@@ -161,8 +161,9 @@ class CheckCli(rhncli.RhnCli):
             print "%s" % e
 
     def __fetch_future_action(self, action):
-        """ Fetch one specific action from rhnParent """
-        pass
+        """
+        Fetch one specific action from rhnParent
+        """
 
     def __check_future_actions(self):
         """ Retrieve scheduled actions and cache them if possible """
