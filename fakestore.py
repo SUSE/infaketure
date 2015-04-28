@@ -7,14 +7,6 @@ import sqlite3
 
 
 class DBStorage(object):
-    def __new__(cls, *args, **kwargs):
-        """
-        Singleton.
-        """
-        if not cls.__instance:
-            cls.__instance = super(DBHandle, cls).__new__(cls, *args, **kwargs)
-        return cls.__instance
-
     def __init__(self, path):
         self._path = path
         self.connection = None
