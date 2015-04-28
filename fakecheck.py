@@ -134,7 +134,7 @@ class CheckCli(rhncli.RhnCli):
         status_report = CheckCli.__build_status_report()
 
         action = self.__get_action(status_report)
-        while action != "" and action != {}:
+        while action:
             self.__verify_server_capabilities(caps)
 
             if self.is_valid_action(action):
