@@ -136,13 +136,14 @@ class CheckCli(rhncli.RhnCli):
         action = self.__get_action(status_report)
         while action:
             self.__verify_server_capabilities(caps)
-
             if self.is_valid_action(action):
                 try:
                     up2dateAuth.updateLoginInfo()
                 except up2dateErrors.ServerCapabilityError, e:
-                    print e
+                    print "Action auth error:", e
                 self.handle_action(action)
+            else:
+                print "Action '{0}' is invalid".format(str(action))
 
             action = self.__get_action(status_report)
 
