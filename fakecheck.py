@@ -38,15 +38,8 @@ import urllib2
 import xmlrpclib
 import urlparse
 
-import gettext
-t = gettext.translation('rhn-client-tools', fallback=True)
-_ = t.ugettext
-
 from OpenSSL import SSL
 sys.path.append("/usr/share/rhn/")
-
-# disable sgmlop module
-# it breaks rhn_check when loaded during xmlrpclib import
 sys.modules['sgmlop'] = None
 
 from up2date_client import getMethod
@@ -410,7 +403,7 @@ class CheckCli(rhncli.RhnCli):
         if need_ca:
             for rhns_ca_cert in rhns_ca_certs:
                 if not os.access(rhns_ca_cert, os.R_OK):
-                    msg = "%s: %s" % (_("ERROR: can not find RHNS CA file"), rhns_ca_cert)
+                    msg = "%s: %s" % ("ERROR: can not find RHNS CA file", rhns_ca_cert)
                     log.log_me("%s" % msg)
                     raise up2dateErrors.SSLCertificateFileNotFound(msg)
 
