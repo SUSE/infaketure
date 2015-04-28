@@ -163,6 +163,7 @@ class VirtualRegistration(object):
         """
         Initialize command line options.
         """
+        self._dbstore_file = os.path.join(os.path.abspath("."), "fakestore.db")
         opt = OptionParser(version="Bloody Alpha, 0.1")
         opt.add_option("-m", "--manager-hostname", action="store", dest="fqdn",
                        help="Specify an activation key")
@@ -176,6 +177,9 @@ class VirtualRegistration(object):
                        help="Specify a base name for a fake hosts, so it will go incrementally, "
                             "like FAKE0, FAKE1 ... . By default random host names if cracklib is installed "
                             "or 'test' as base name.")
+        opt.add_option("-d", "--database-file", action="store", dest="dbfile",
+                       help="Specify a path to SQLite3 database. "
+                            "Default is '{0}'.".format(self._dbstore_file))
 
         self.options, self.args = opt.parse_args()
 
@@ -196,6 +200,9 @@ class VirtualRegistration(object):
         except Exception as error:
             raise VirtualRegistration.VRException("Wrong amount of fake hosts: {0}".format(self.options.amount))
 
+        if self.options.dbfile:
+            self._dbstore_file = self.options.dbfile
+
 
     def register(self, profile):
         """
@@ -203,7 +210,7 @@ class VirtualRegistration(object):
         """
         sid = None
         xmldata = XMLData()
-        rhnreg.cfg.set("systemIdPath", "/etc/sysconfig/rhn/systemid-{0}".format(profile.id))
+        #rhnreg.cfg.set("systemIdPath", "/etc/sysconfig/rhn/systemid-{0}".format(profile.id))
         try:
             sid = rhnreg.registerSystem(token=self.options.key,
                                         profileName=profile.id,
