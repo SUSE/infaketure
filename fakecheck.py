@@ -106,54 +106,14 @@ class CheckCli(rhncli.RhnCli):
     def __get_action(self, status_report):
         try:
             return self.server.queue.get(self.sid, ACTION_VERSION, status_report)
-        except xmlrpclib.Fault, f:
-            if f.faultCode == -31:
-                raise up2dateErrors.InsuffMgmntEntsError(f.faultString), None, sys.exc_info()[2]
-            else:
-                print "Could not retrieve action item from server %s" % self.server
-                print "Error code: %d%s" % (f.faultCode, f.faultString)
-        # XXX: what if no SSL in socket?
-        except socket.sslerror:
-            print "ERROR: SSL handshake to %s failed" % self.server
-            print """
-            This could signal that you are *NOT* talking to a server
-            whose certificate was signed by a Certificate Authority
-            listed in the %s file or that the
-            RHNS-CA-CERT file is invalid.""" % self.rhns_ca_cert
-        except socket.error:
-            print "Could not retrieve action from %s.\n"\
-                  "Possible networking problem?" % str(self.server)
-        except up2dateErrors.ServerCapabilityError, e:
-            print e
-        except SSL.Error, e:
-            print "ERROR: SSL errors detected"
-            print "%s" % e
+        except Exception as ex:
+            print "Action execution error:", ex
 
     def __query_future_actions(self, time_window):
         try:
-            actions = self.server.queue.get_future_actions(self.sid, time_window)
-            return actions
-        except xmlrpclib.Fault, f:
-            if f.faultCode == -31:
-                raise up2dateErrors.InsuffMgmntEntsError(f.faultString), None, sys.exc_info()[2]
-            else:
-                print "Could not retrieve action item from server %s" % self.server
-                print "Error code: %d%s" % (f.faultCode, f.faultString)
-        except socket.sslerror:
-            print "ERROR: SSL handshake to %s failed" % self.server
-            print """
-            This could signal that you are *NOT* talking to a server
-            whose certificate was signed by a Certificate Authority
-            listed in the %s file or that the
-            RHNS-CA-CERT file is invalid.""" % self.rhns_ca_cert
-        except socket.error:
-            print "Could not retrieve action from %s.\n"\
-                  "Possible networking problem?" % str(self.server)
-        except up2dateErrors.ServerCapabilityError, e:
-            print e
-        except SSL.Error, e:
-            print "ERROR: SSL errors detected"
-            print "%s" % e
+            return self.server.queue.get_future_actions(self.sid, time_window)
+        except Exception as ex:
+            print "Future actions error:", ex
 
     def __fetch_future_action(self, action):
         """
