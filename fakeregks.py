@@ -12,6 +12,7 @@ import random
 import uuid
 from xml.dom import minidom as dom
 import fakecheck
+import fakehostnames
 
 sys.path.append("/usr/share/rhn/")
 
@@ -227,9 +228,10 @@ class VirtualRegistration(object):
 
 if __name__ == '__main__':
     try:
+        fh = fakehostnames.FakeNames()
         vr = VirtualRegistration()
         for x in range(vr.amount):
-            vr.register(CMDBProfile("zoo{0}.suse.de".format(x), idx=x))
+            vr.register(CMDBProfile("{0}.suse.de".format(fh()), idx=x))
     except VirtualRegistration.VRException as ex:
         print "Error:\n  {0}\n".format(ex)
     except Exception as ex:
