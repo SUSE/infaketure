@@ -10,6 +10,7 @@ from optparse import Option
 from optparse import OptionParser
 import random
 import uuid
+from xml.dom import minidom as dom
 import fakecheck
 
 sys.path.append("/usr/share/rhn/")
@@ -100,6 +101,32 @@ class CMDBProfile(object):
         return (ipv6 and ":" or ".").join([ipv6 and hex(e).split("x")[-1] or str(e) for e in adr])
 
 
+class XMLData(object):
+    """
+    Parse SID data.
+    """
+    def __init__(self):
+        self.dom = None
+        self.members = None
+
+    def load(self, src):
+        self.dom = dom.parseString(src)
+        self._get_members()
+
+    def _get_members(self):
+        self.members = dict()
+        for member_node in self.dom.getElementsByTagName('member'):
+            name = member_node.getElementsByTagName('name')[0].childNodes[0].nodeValue
+            if member_node.getElementsByTagName('value')[0].getElementsByTagName('string'):
+                self.members[name] = member_node.getElementsByTagName('string')[0].childNodes[0].nodeValue
+
+    def get_member(self, name):
+        """
+        Get SID member.
+        """
+        return self.members.get(name) or 'N/A'
+
+
 class VirtualRegistration(object):
     """
     Virtual registration.
@@ -156,12 +183,15 @@ class VirtualRegistration(object):
         Register one system based on profile.
         """
         sid = None
+        xmldata = XMLData()
         rhnreg.cfg.set("systemIdPath", "/etc/sysconfig/rhn/systemid-{0}".format(profile.id))
         try:
             sid = rhnreg.registerSystem(token=self.options.key,
                                         profileName=profile.id,
                                         other=profile.params)
-            print "Registered with SID {0}".format(sid)
+            xmldata.load(sid)
+            print "Registered {0} with System ID {1}".format(xmldata.get_member('profile_name'),
+                                                             xmldata.get_member('system_id'))
         except (up2dateErrors.AuthenticationTicketError,
                 up2dateErrors.RhnUuidUniquenessError,
                 up2dateErrors.CommunicationError,
