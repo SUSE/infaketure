@@ -57,6 +57,14 @@ class DBStorage(object):
             self.connection.commit()
         self._run_init_queries()
 
+    def get_next_id(self, table, field="id"):
+        """
+        Get the max of the ID field.
+        """
+        self.cursor.execute("SELECT max({0}) FROM {1}".format(field, table))
+        data = self.cursor.fetchall()
+        return data and data[0][0] or 0
+
     def flush(self, table):
         """
         Flush the table.
