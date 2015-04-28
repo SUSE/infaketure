@@ -7,15 +7,20 @@ import os
 import string
 import random
 import re
+import socket
 
 
 class FakeNames(object):
     CRACKLIB = "/usr/share/cracklib"
 
-    def __init__(self):
+    def __init__(self, fqdn=False):
         self._history = list()
         self._crack_dict = list()
         self._idx = 0
+        if fqdn:
+            self._domain = "." + ".".join(socket.getfqdn().split(".")[1:])
+        else:
+            self._domain = ""
 
         if os.path.exists(self.CRACKLIB):
             self._unpack_cracklib()
@@ -66,4 +71,4 @@ class FakeNames(object):
                 name = pattern.format(*self.ubuntify())
         self._history.append(name)
 
-        return self._history[-1]
+        return self._history[-1] + self._domain
