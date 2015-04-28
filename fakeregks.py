@@ -227,6 +227,9 @@ class VirtualRegistration(object):
             hardware_id = self.db.get_next_id("hardware") + 1
             self.db.cursor.execute("INSERT INTO hardware (ID, HID, BODY) VALUES (?, ?, ?)",
                                    (hardware_id, host_id, str(profile.hardware),))
+            cfg_id = self.db.get_next_id("configs") + 1
+            self.db.cursor.execute("INSERT INTO configs (ID, HID, BODY) VALUES (?, ?, ?)",
+                                   (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
             self.db.connection.commit()
         except (up2dateErrors.AuthenticationTicketError,
                 up2dateErrors.RhnUuidUniquenessError,
