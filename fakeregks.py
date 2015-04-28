@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# An attempt to create a fake registration
+# Create a fake registrations in a bulk.
 # Author: BOFH <bo@suse.de>
 #
 
@@ -137,13 +137,13 @@ class VirtualRegistration(object):
         VirtualRegistration-specific exceptions.
         """
 
-    def __init__(self, serverfqdn):
+    def __init__(self):
         """
         Constructor.
         """
         self._initialize()
 
-        rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(serverfqdn))
+        rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(self.options.fqdn))
         rhnreg.getCaps()
 
         def _getProductProfile():
@@ -163,13 +163,23 @@ class VirtualRegistration(object):
         Initialize command line options.
         """
         opt = OptionParser(version="Bloody Alpha, 0.1")
-        opt.add_option("--activationkey", action="store", dest="key", help="Specify an activation key")
-        opt.add_option("--sslCACert", action="store", dest="cacert", help="Specify a file to use as the ssl CA cert")
+        opt.add_option("-m", "--manager-hostname", action="store", dest="fqdn",
+                       help="Specify an activation key")
+        opt.add_option("-k", "--activation-key", action="store", dest="key",
+                       help="Specify an activation key")
+        opt.add_option("-c", "--sslCACert", action="store", dest="cacert",
+                       help="Specify a file to use as the ssl CA cert")
+        opt.add_option("-a", "--hosts-amount", action="store", dest="amount",
+                       help="Specify an amount of fake hosts to be registered. Default 5.")
+        opt.add_option("-b", "--base-name", action="store", dest="base",
+                       help="Specify a base name for a fake hosts, so it will go incrementally, "
+                            "like FAKE0, FAKE1 ... . By default random host names if cracklib is installed "
+                            "or 'test' as base name.")
 
         self.options, self.args = opt.parse_args()
 
         # Check the required parameters
-        if not self.options.key:
+        if not self.options.key or not self.options.fqdn:
             sys.argv.append("-h")
             opt.parse_args()
 
@@ -179,6 +189,12 @@ class VirtualRegistration(object):
         if not os.path.exists(rhnreg.cfg["sslCACert"]):
             raise VirtualRegistration.VRException(
                 "SSL CA Certificate was not found at {0}".format(rhnreg.cfg["sslCACert"]))
+
+        try:
+            self.amount = int(self.options.amount and self.options.amount or "5")
+        except Exception as error:
+            raise VirtualRegistration.VRException("Wrong amount of fake hosts: {0}".format(self.options.amount))
+
 
     def register(self, profile):
         """
@@ -211,8 +227,8 @@ class VirtualRegistration(object):
 
 if __name__ == '__main__':
     try:
-        vr = VirtualRegistration("sumabench1.suse.de")
-        for x in range(5):
+        vr = VirtualRegistration()
+        for x in range(vr.amount):
             vr.register(CMDBProfile("zoo{0}.suse.de".format(x), idx=x))
     except VirtualRegistration.VRException as ex:
         print "Error:\n  {0}\n".format(ex)
