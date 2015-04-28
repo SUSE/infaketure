@@ -201,8 +201,6 @@ class VirtualRegistration(object):
             print "Registration error: {0}".format(e.errmsg)
             return
 
-        rhnreg.writeSystemId(sid)
-        rhnreg.cfg.save()
         rhnreg.sendHardware(sid, profile.hardware)
         rhnreg.sendPackages(sid, profile.packages)
         rhnreg.sendVirtInfo(sid)
