@@ -230,8 +230,8 @@ if __name__ == '__main__':
     try:
         fh = fakehostnames.FakeNames(fqdn=True)
         vr = VirtualRegistration()
-        for x in range(vr.amount):
-            vr.register(CMDBProfile(fh(), idx=x))
+        for idx in range(vr.amount):
+            vr.register(CMDBProfile(fh(), idx=idx))
     except VirtualRegistration.VRException as ex:
         print "Error:\n  {0}\n".format(ex)
     except Exception as ex:
