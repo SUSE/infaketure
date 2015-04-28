@@ -229,7 +229,7 @@ class VirtualRegistration(object):
                 up2dateErrors.RhnUuidUniquenessError,
                 up2dateErrors.CommunicationError,
                 up2dateErrors.AuthenticationOrAccountCreationError), e:
-            print "Registration error: {0}".format(e.errmsg)
+            print "WARNING: Registration error: {0}".format(e.errmsg)
             return
 
         rhnreg.sendHardware(sid, profile.hardware)
