@@ -36,7 +36,7 @@ class FakeNames(object):
 
     def ubuntify(self):
         """
-        Msidling like a rock-n-roll! \m/
+        Msidling with a rock-n-roll! \m/
         """
         choice = string.lowercase[random.randint(0, len(string.lowercase) - 1)]
         prefs = list()
