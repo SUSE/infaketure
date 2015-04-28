@@ -14,9 +14,13 @@ class DBStorage(object):
 
         self.init_queries = list()
         self.init_queries.append("CREATE TABLE hosts "
-                                 "(id INTEGER PRIMARY KEY, SID CHAR(255), DATA TEXT)")
+                                 "(id INTEGER PRIMARY KEY, SID CHAR(255), HOSTNAME CHAR(255), SID_XML BLOB)")
         self.init_queries.append("CREATE TABLE configs "
-                                 "(id INTEGER PRIMARY KEY, hid INTEGER, DATA TEXT)")
+                                 "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
+        self.init_queries.append("CREATE TABLE hardware "
+                                 "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
+        self.init_queries.append("CREATE TABLE packages "
+                                 "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
 
     def open(self, new=False):
         """
