@@ -249,7 +249,6 @@ class CheckCli(rhncli.RhnCli):
         If we want to run any actions everytime rhnsd runs rhn_check,
         we can add them to the list LOCAL_ACTIONS
         """
-
         for method_params in LOCAL_ACTIONS:
             method = method_params[0]
             params = method_params[1]
