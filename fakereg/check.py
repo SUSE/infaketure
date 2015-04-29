@@ -53,7 +53,7 @@ from up2date_client import clientCaps
 from up2date_client import capabilities
 from up2date_client import rhncli, rhnserver
 
-import fakeactions
+from fakereg import actions
 
 from rhn import rhnLockfile
 from rhn import rpclib
@@ -241,7 +241,7 @@ class CheckCli(rhncli.RhnCli):
 
     @staticmethod
     def __do_call(method, params, kwargs={}):
-        retval = fakeactions.Dispatcher(method)(*params, **kwargs)
+        retval = actions.Dispatcher(method)(*params, **kwargs)
         if method == "reboot.reboot":
             # Make sure SUMA accepts the reboot
             print "\tINFO: Reboot scheduled. Pausing for a few seconds..."
@@ -254,11 +254,11 @@ class CheckCli(rhncli.RhnCli):
 
     @staticmethod
     def __run_action(method, params, kwargs={}):
-        try:
-            status, message, data = CheckCli.__do_call(method, params, kwargs)
-        except Exception as ex:
-            log.log_exception(*sys.exc_info())
-            status, message, data = 6, "Unhandled exception had occurred", {}
+        #try:
+        status, message, data = CheckCli.__do_call(method, params, kwargs)
+        #except Exception as ex:
+        #    log.log_exception(*sys.exc_info())
+        #    status, message, data = 6, "Unhandled exception had occurred", {}
 
         return status, message, data
 
