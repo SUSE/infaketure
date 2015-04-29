@@ -181,8 +181,7 @@ class CheckCli(rhncli.RhnCli):
         Wrapper handler for the action we're asked to do.
         """
         log.log_debug("handle_action", action)
-        log.log_debug("handle_action actionid = %s, version = %s" % (
-            action['id'], action['version']))
+        log.log_debug("handle_action actionid = %s, version = %s" % (action['id'], action['version']))
 
         (method, params) = self.__parse_action_data(action)
         (status, message, data) = CheckCli.__run_action(method, params, {'cache_only': cache_only})
