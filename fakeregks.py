@@ -238,9 +238,6 @@ class VirtualRegistration(object):
         for host_id, sid_id, sid in self.db.cursor.fetchall():
             xmldata.load(sid)
             print "Refreshing {0} ({1})".format(xmldata.get_member("profile_name"), sid_id)
-            #try:
-            #except Exception as ex:
-            #    print "REFRESH WARNING:", ex
             fakecheck.CheckCli(self._get_host_config(host_id), sid, hostname=xmldata.get_member("profile_name")).main()
 
     def register(self, profile):
