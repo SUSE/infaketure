@@ -265,20 +265,12 @@ class CheckCli(rhncli.RhnCli):
     @staticmethod
     def __run_action(method, params, kwargs={}):
         try:
-            (status, message, data) = CheckCli.__do_call(method, params, kwargs)
-        except getMethod.GetMethodException:
-            log.log_debug("Attempt to call an unsupported action ", method,
-                params)
-            status = 6
-            message = "Invalid function call attempted"
-            data = {}
-        except:
+            status, message, data = CheckCli.__do_call(method, params, kwargs)
+        except Exception as ex:
             log.log_exception(*sys.exc_info())
-            # The action code failed in some way. let's let the server know.
-            status = 6,
-            message = "Fatal error in Python code occurred"
-            data = {}
-        return (status, message, data)
+            status, message, data = 6, "Unhandled exception had occurred", {}
+
+        return status, message, data
 
     @staticmethod
     def __check_instance_lock():
