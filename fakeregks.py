@@ -239,9 +239,9 @@ class VirtualRegistration(object):
             xmldata.load(sid)
             print "Refreshing {0} ({1})".format(xmldata.get_member("profile_name"), sid_id)
             #try:
-            fakecheck.CheckCli(self._get_host_config(host_id), sid).main()
             #except Exception as ex:
             #    print "REFRESH WARNING:", ex
+            fakecheck.CheckCli(self._get_host_config(host_id), sid, hostname=xmldata.get_member("profile_name")).main()
 
     def register(self, profile):
         """
@@ -281,7 +281,7 @@ class VirtualRegistration(object):
         rhnreg.sendVirtInfo(sid)
         rhnreg.startRhnsd()
 
-        fakecheck.CheckCli(rhnreg.cfg, sid).main()
+        fakecheck.CheckCli(rhnreg.cfg, sid, hostname=xmldata.get_member('profile_name')).main()
 
 
 if __name__ == '__main__':
