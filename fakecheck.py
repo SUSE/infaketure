@@ -252,7 +252,7 @@ class CheckCli(rhncli.RhnCli):
 
         for method_params in LOCAL_ACTIONS:
             method = method_params[0]
-            params =  method_params[1]
+            params = method_params[1]
             (status, message, data) = CheckCli.__run_action(method, params)
             log.log_debug("local action status: ", (status, message, data))
 
