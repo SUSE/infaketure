@@ -254,11 +254,11 @@ class CheckCli(rhncli.RhnCli):
 
     @staticmethod
     def __run_action(method, params, kwargs={}):
-        try:
-            status, message, data = CheckCli.__do_call(method, params, kwargs)
-        except Exception as ex:
-            log.log_exception(*sys.exc_info())
-            status, message, data = 6, "Unhandled exception had occurred", {}
+        #try:
+        status, message, data = CheckCli.__do_call(method, params, kwargs)
+        #except Exception as ex:
+        #    log.log_exception(*sys.exc_info())
+        #    status, message, data = 6, "Unhandled exception had occurred", {}
 
         return status, message, data
 
