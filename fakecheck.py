@@ -177,7 +177,9 @@ class CheckCli(rhncli.RhnCli):
         return None
 
     def handle_action(self, action, cache_only=None):
-        """ Wrapper handler for the action we're asked to do. """
+        """
+        Wrapper handler for the action we're asked to do.
+        """
         log.log_debug("handle_action", action)
         log.log_debug("handle_action actionid = %s, version = %s" % (
             action['id'], action['version']))
