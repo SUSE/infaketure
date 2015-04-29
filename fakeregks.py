@@ -126,7 +126,7 @@ class XMLData(object):
         """
         Get SID member.
         """
-        return self.members.get(name) or 'N/A'
+        return str(self.members.get(name)) or 'N/A'
 
 
 class VirtualRegistration(object):
