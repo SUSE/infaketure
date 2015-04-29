@@ -15,7 +15,7 @@ class Action(object):
 
     def __call__(self, *args, **kwargs):
         obj = self.__returners__.get(self.__target__)
-        return callable(obj) and obj(*args, **kwargs) or obj or (0, "OK",)
+        return callable(obj) and obj(*args, **kwargs) or obj or Dispatcher.success_response()
 
 
 class Dispatcher(object):
@@ -31,23 +31,28 @@ class Dispatcher(object):
         self.__traverse_path__.append(item)
         return self
 
-    def _no_ops(self, *args, **kwargs):
+    @staticmethod
+    def no_ops_response(*args, **kwargs):
         return 0, "no-ops for caching", {}
+
+    @staticmethod
+    def success_response(*args, **kwargs):
+        return 0, "Success", {}
 
     def __get_action(self):
         action = Action()
         action.packages = Action(checkNeedUpdate=(0, "rpm database not modified since last update "
                                                      "(or package list recently updated)", {}),
                                  setLocks=(0, "Wrote /etc/zypp/locks", {}),
-                                 remove=self._no_ops,
-                                 update=self._no_ops,
-                                 patch_install=self._no_ops,
-                                 runTransaction=self._no_ops,
-                                 fullUpdate=self._no_ops,
+                                 remove=Dispatcher.no_ops_response,
+                                 update=Dispatcher.no_ops_response,
+                                 patch_install=Dispatcher.no_ops_response,
+                                 runTransaction=Dispatcher.no_ops_response,
+                                 fullUpdate=Dispatcher.no_ops_response,
                                  refresh_list=(0, "rpmlist refreshed", {}),
                                  touch_time_stamp=(0, "unable to open the timestamp file", {}),
-                                 verify=self._no_ops,
-                                 verifyAll=self._no_ops,)
+                                 verify=Dispatcher.no_ops_response,
+                                 verifyAll=Dispatcher.no_ops_response,)
         action.reboot = Action()
         action.rhnsd = Action()
         action.script = Action()
