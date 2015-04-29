@@ -80,6 +80,7 @@ class CheckCli(rhncli.RhnCli):
         self.options = list()
         self.args = list()
         self.sid = sid
+        self.verbose = False
         self.hostname = hostname and hostname.split(".")[0] or None
 
     def initialize(self):
@@ -108,13 +109,15 @@ class CheckCli(rhncli.RhnCli):
         try:
             return self.server.queue.get(self.sid, ACTION_VERSION, status_report)
         except Exception as ex:
-            print "Action execution error:", ex
+            if self.verbose:
+                print "Action execution error:", ex
 
     def __query_future_actions(self, time_window):
         try:
             return self.server.queue.get_future_actions(self.sid, time_window)
         except Exception as ex:
-            print "Future actions error:", ex
+            if self.verbose:
+                print "Future actions error:", ex
 
     def __fetch_future_action(self, action):
         """
@@ -144,7 +147,8 @@ class CheckCli(rhncli.RhnCli):
             if self.is_valid_action(action):
                 self.handle_action(action)
             else:
-                print "Action '{0}' is invalid".format(str(action))
+                if self.verbose:
+                    print "Action '{0}' is invalid".format(str(action))
 
             action = self.__get_action(status_report)
 
@@ -194,25 +198,27 @@ class CheckCli(rhncli.RhnCli):
             log.log_debug("Sending back response", (status, message, data))
             self.submit_response(action['id'], status, message, data)
         else:
-            print "Response was not sent!"
+            if self.verbose:
+                print "Response was not sent!"
 
     def is_valid_action(self, action):
         log.log_debug("check_action", action)
 
         # be very paranoid of what we get back
-        if type(action) != type({}):
+        if type(action) != type({}) and self.verbose:
             print "Got unparseable action response from server"
 
         for key in ['id', 'version', 'action']:
-            if not action.has_key(key):
+            if not action.has_key(key) and self.verbose:
                 print "Got invalid response - missing '%s'" % key
         try:
             ver = int(action['version'])
         except ValueError:
             ver = -1
         if ver > ACTION_VERSION or ver < 0:
-            print "Got unknown action version %d" % ver
-            print action
+            if self.verbose:
+                print "Got unknown action version %d" % ver
+                print action
             # the -99 here is kind of magic
             self.submit_response(action["id"], xmlrpclib.Fault(-99, "Can not handle this version"))
             return False
@@ -239,26 +245,26 @@ class CheckCli(rhncli.RhnCli):
             (status, message, data) = CheckCli.__run_action(method, params)
             log.log_debug("local action status: ", (status, message, data))
 
-    @staticmethod
-    def __do_call(method, params, kwargs={}):
+    def __do_call(self, method, params, kwargs={}):
         retval = actions.Dispatcher(method)(*params, **kwargs)
         if method == "reboot.reboot":
             # Make sure SUMA accepts the reboot
-            print "\tINFO: Reboot scheduled. Pausing for a few seconds..."
+            if self.verbose:
+                print "\tINFO: Reboot scheduled. Pausing for a few seconds..."
             time.sleep(6)
         else:
-            # Debug
-            print "Call: '{0}', return: {1}".format(method, retval)
+            if self.verbose:
+                print "Call: '{0}', return: {1}".format(method, retval)
 
         return retval
 
     @staticmethod
     def __run_action(method, params, kwargs={}):
-        #try:
-        status, message, data = CheckCli.__do_call(method, params, kwargs)
-        #except Exception as ex:
-        #    log.log_exception(*sys.exc_info())
-        #    status, message, data = 6, "Unhandled exception had occurred", {}
+        try:
+            status, message, data = self.__do_call(method, params, kwargs)
+        except Exception as ex:
+            log.log_exception(*sys.exc_info())
+            status, message, data = 6, "Unhandled exception had occurred", {}
 
         return status, message, data
 

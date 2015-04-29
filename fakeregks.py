@@ -143,6 +143,7 @@ class VirtualRegistration(object):
         """
         Constructor.
         """
+        self.verbose = False
         self._initialize()
 
         rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(self.options.fqdn))
@@ -183,6 +184,8 @@ class VirtualRegistration(object):
                             "Default is '{0}'.".format(_dbstore_file))
         opt.add_option("-r", "--refresh", action="store_true", dest="refresh",
                        help="Run rhn_check on registered systems.")
+        opt.add_option("-v", "--verbose", action="store_true", dest="verbose",
+                       help="Talk to me!")
 
         self.options, self.args = opt.parse_args()
 
@@ -205,6 +208,9 @@ class VirtualRegistration(object):
 
         if self.options.dbfile:
             _dbstore_file = self.options.dbfile
+
+        if self.options.verbose:
+            self.verbose = True
 
         self.db = store.DBStorage(_dbstore_file)
         self.db.open()
@@ -237,8 +243,11 @@ class VirtualRegistration(object):
         self.db.cursor.execute("SELECT ID, SID, SID_XML FROM hosts")
         for host_id, sid_id, sid in self.db.cursor.fetchall():
             xmldata.load(sid)
-            print "Refreshing {0} ({1})".format(xmldata.get_member("profile_name"), sid_id)
-            check.CheckCli(self._get_host_config(host_id), sid, hostname=xmldata.get_member("profile_name")).main()
+            if self.verbose:
+                print "Refreshing {0} ({1})".format(xmldata.get_member("profile_name"), sid_id)
+            cli = check.CheckCli(self._get_host_config(host_id), sid, hostname=xmldata.get_member("profile_name"))
+            cli.verbose = self.verbose
+            cli.main()
 
     def register(self, profile):
         """
