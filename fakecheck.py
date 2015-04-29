@@ -170,22 +170,11 @@ class CheckCli(rhncli.RhnCli):
         self.server = self.get_server()
 
         try:
-            ret = self.server.queue.submit(self.sid, action_id, status, message, data)
-        except xmlrpclib.Fault, f:
-            print "Could not submit results to server %s" % self.server
-            print "Error code: %d%s" % (f.faultCode, f.faultString)
-        # XXX: what if no SSL in socket?
-        except socket.sslerror:
-            print "ERROR: SSL handshake to %s failed" % self.server
-            print """
-            This could signal that you are *NOT* talking to a server
-            whose certificate was signed by a Certificate Authority
-            listed in the %s file or that the
-            RHNS-CA-CERT file is invalid.""" % self.rhns_ca_cert
-        except socket.error:
-            print "Could not submit to %s.\n"\
-                  "Possible networking problem?" % str(self.server)
-        return ret
+            return self.server.queue.submit(self.sid, action_id, status, message, data)
+        except Exception as ex:
+            print ex
+
+        return None
 
     def handle_action(self, action, cache_only=None):
         """ Wrapper handler for the action we're asked to do. """
