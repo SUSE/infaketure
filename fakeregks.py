@@ -11,9 +11,9 @@ from optparse import OptionParser
 import random
 import uuid
 from xml.dom import minidom as dom
-import fakecheck
-import fakehostnames
-import fakestore
+from fakereg import check
+from fakereg import hostnames
+from fakereg import store
 
 sys.path.append("/usr/share/rhn/")
 
@@ -206,7 +206,7 @@ class VirtualRegistration(object):
         if self.options.dbfile:
             _dbstore_file = self.options.dbfile
 
-        self.db = fakestore.DBStorage(_dbstore_file)
+        self.db = store.DBStorage(_dbstore_file)
         self.db.open()
 
     def main(self):
@@ -238,7 +238,7 @@ class VirtualRegistration(object):
         for host_id, sid_id, sid in self.db.cursor.fetchall():
             xmldata.load(sid)
             print "Refreshing {0} ({1})".format(xmldata.get_member("profile_name"), sid_id)
-            fakecheck.CheckCli(self._get_host_config(host_id), sid, hostname=xmldata.get_member("profile_name")).main()
+            check.CheckCli(self._get_host_config(host_id), sid, hostname=xmldata.get_member("profile_name")).main()
 
     def register(self, profile):
         """
@@ -278,13 +278,13 @@ class VirtualRegistration(object):
         rhnreg.sendVirtInfo(sid)
         rhnreg.startRhnsd()
 
-        fakecheck.CheckCli(rhnreg.cfg, sid, hostname=xmldata.get_member('profile_name')).main()
+        check.CheckCli(rhnreg.cfg, sid, hostname=xmldata.get_member('profile_name')).main()
 
 
 if __name__ == '__main__':
     #try:
     if 1:
-        fh = fakehostnames.FakeNames(fqdn=True)
+        fh = hostnames.FakeNames(fqdn=True)
         vr = VirtualRegistration()
         vr.main()
     #except VirtualRegistration.VRException as ex:
