@@ -258,7 +258,7 @@ class CheckCli(rhncli.RhnCli):
     @staticmethod
     def __do_call(method, params, kwargs={}):
         retval = fakeactions.Dispatcher(method)(*params, **kwargs)
-        print "Calling '{0}', return: {1}".format(method, retval)
+        print "Call: '{0}', return: {1}".format(method, retval)
 
         return retval
 
