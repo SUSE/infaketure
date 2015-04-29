@@ -257,7 +257,13 @@ class CheckCli(rhncli.RhnCli):
     @staticmethod
     def __do_call(method, params, kwargs={}):
         retval = fakeactions.Dispatcher(method)(*params, **kwargs)
-        print "Call: '{0}', return: {1}".format(method, retval)
+        if method == "reboot.reboot":
+            # Make sure SUMA accepts the reboot
+            print "\tINFO: Reboot scheduled. Pausing for a few seconds..."
+            time.sleep(6)
+        else:
+            # Debug
+            print "Call: '{0}', return: {1}".format(method, retval)
 
         return retval
 
