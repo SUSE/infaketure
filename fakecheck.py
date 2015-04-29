@@ -146,7 +146,6 @@ class CheckCli(rhncli.RhnCli):
     def __verify_server_capabilities(self, caps):
         response_headers = self.server.get_response_headers()
         caps.populate(response_headers)
-        # do we actually want to validte here?
         try:
             caps.validate()
         except up2dateErrors.ServerCapabilityError, e:
