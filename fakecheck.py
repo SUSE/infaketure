@@ -73,13 +73,14 @@ LOCAL_ACTIONS = [("packages.checkNeedUpdate", ("rhnsd=1",))]
 
 class CheckCli(rhncli.RhnCli):
 
-    def __init__(self, cfg, sid):
+    def __init__(self, cfg, sid, hostname=None):
         self.cfg = cfg
         self.rhns_ca_cert = self.cfg['sslCACert']
         self.server = None
         self.options = list()
         self.args = list()
         self.sid = sid
+        self.hostname = hostname and hostname.split(".")[0] or None
 
     def initialize(self):
         pass
@@ -131,7 +132,11 @@ class CheckCli(rhncli.RhnCli):
         # the list of caps the client needs
         caps = capabilities.Capabilities()
 
-        status_report = CheckCli.__build_status_report()
+        sysname, nodename, release, version, machine = os.uname()
+        status_report = {
+            'uname': (sysname, (self.hostname and self.hostname or nodename), release, version, machine),
+            'uptime': [0, 0],  # Just rebooted
+        }
 
         action = self.__get_action(status_report)
         while action:
@@ -219,26 +224,6 @@ class CheckCli(rhncli.RhnCli):
             up2dateAuth.maybeUpdateVersion()
         except up2dateErrors.CommunicationError, e:
             print e
-
-    @staticmethod
-    def __build_status_report():
-        status_report = {}
-        status_report["uname"] = os.uname()
-
-        if os.access("/proc/uptime", os.R_OK):
-            uptime = open("/proc/uptime", "r").read().split()
-            try:
-                status_report["uptime"] = map(int, map(float, uptime))
-            except (TypeError, ValueError):
-                status_report["uptime"] = map(lambda a: a[:-3], uptime)
-            except:
-                pass
-
-        # We need to fit into xmlrpc's integer limits
-        if status_report['uptime'][1] > 2L**31-1:
-            status_report['uptime'][1] = -1
-
-        return status_report
 
     @staticmethod
     def __run_local_actions():
