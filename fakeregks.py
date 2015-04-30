@@ -6,11 +6,14 @@
 
 import sys
 import os
+import time
 from optparse import Option
 from optparse import OptionParser
 import random
 import uuid
 from xml.dom import minidom as dom
+import multiprocessing
+
 from fakereg import check
 from fakereg import hostnames
 from fakereg import store
@@ -242,8 +245,21 @@ class VirtualRegistration(object):
             for host in self.db.get_all_hosts():
                 fh.add_history(host.hostname)
 
+            processes = list()
             for idx in range(vr.amount):
-                self.register(CMDBProfile(fh(), idx=idx))
+                process = multiprocessing.Process(target=self.register, args=(CMDBProfile(fh(), idx=idx),))
+                process.daemon = True
+                process.start()
+                processes.append(process)
+
+            while True:
+                p_buff = list()
+                for process in processes:
+                    if process.is_alive():
+                        p_buff.append(process)
+                if not p_buff:
+                    break
+                time.sleep(0.1)
 
         self.db.close()
 
