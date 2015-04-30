@@ -243,9 +243,9 @@ class VirtualRegistration(object):
                 fh.add_history(host.hostname)
 
             for idx in range(vr.amount):
-                vr.register(CMDBProfile(fh(), idx=idx))
+                self.register(CMDBProfile(fh(), idx=idx))
 
-        vr.db.close()
+        self.db.close()
 
     def flush(self, wipe=False):
         """
