@@ -165,6 +165,19 @@ class VirtualRegistration(object):
             return profile
 
         rhnreg.getProductProfile = _getProductProfile
+        self.__processes = list()
+    def wait_processes(self):
+        """
+        Wait until processes finished.
+        """
+        while True:
+            p_buff = list()
+            for process in self.__processes:
+                if process.is_alive():
+                    p_buff.append(process)
+            self.__processes = p_buff[:]
+            if not self.__processes:
+                break
 
     def _initialize(self):
         """
@@ -252,15 +265,8 @@ class VirtualRegistration(object):
                 process.start()
                 processes.append(process)
 
-            while True:
-                p_buff = list()
-                for process in processes:
-                    if process.is_alive():
-                        p_buff.append(process)
-                if not p_buff:
-                    break
-                time.sleep(0.1)
 
+        self.wait_processes()
         self.db.close()
 
     def flush(self, wipe=False):
