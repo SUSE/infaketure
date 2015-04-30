@@ -212,7 +212,7 @@ class VirtualRegistration(object):
         if self.options.verbose:
             self.verbose = True
 
-        self.db = store.DBStorage(_dbstore_file)
+        self.db = store.DBOperations(_dbstore_file)
         self.db.open()
 
     def main(self):
@@ -227,25 +227,40 @@ class VirtualRegistration(object):
 
         vr.db.close()
 
-    def _get_host_config(self, host_id):
+    def flush(self, wipe=False):
         """
-        Get up2date configuration for the host by db ID.
+        Flush the SUSE Manager and reset the internal DB.
         """
-        self.db.cursor.execute("SELECT BODY FROM configs WHERE HID = ?", (host_id,))
-        for cfg in self.db.cursor.fetchall():
-            return eval(cfg[0])
+        self.api.login(self.options.user, self.options.password)
+
+        # Flush hosts in SUMA
+        systems = self.api.system.get_systems()
+        for system in systems:
+            if self.verbose:
+                print "Removing {0} ({1})".format(system['name'], system['sid'])
+            self.api.system.delete_system_by_sid(system['id'])
+        if self.verbose and systems:
+            print "Done"
+
+        # Flush local database
+        if systems:
+            if self.verbose:
+                print "Purging the database."
+            self.db.purge()
+            if self.verbose:
+                print "Done"
+        else:
+            if self.verbose:
+                print "No systems found."
 
     def refresh(self):
         """
         Refresh profiles by running rhn_check over them.
         """
-        xmldata = XMLData()
-        self.db.cursor.execute("SELECT ID, SID, SID_XML FROM hosts")
-        for host_id, sid_id, sid in self.db.cursor.fetchall():
-            xmldata.load(sid)
+        for host in self.db.get_all_hosts():
             if self.verbose:
-                print "Refreshing {0} ({1})".format(xmldata.get_member("profile_name"), sid_id)
-            cli = check.CheckCli(self._get_host_config(host_id), sid, hostname=xmldata.get_member("profile_name"))
+                print "Refreshing {0} ({1})".format(host.hostname, host.sid)
+            cli = check.CheckCli(self.db.get_host_config(host.id), host.profile, hostname=host.hostname)
             cli.verbose = self.verbose
             cli.main()
 

@@ -83,3 +83,34 @@ class DBStorage(object):
         if self.cursor is not None and self.connection is not None:
             self.connection.close()
             self.cursor = self.connection = None
+
+
+class DBOperations(DBStorage):
+    """
+    Operations over the database.
+    """
+
+    def get_all_hosts(self):
+        """
+        Return all hosts.
+        """
+        data = list()
+        self.cursor.execute("SELECT ID, SID, HOSTNAME, SID_XML FROM HOSTS")
+        for host_id, sid, hostname, profile in self.cursor.fetchall():
+            host = type('class', (object,), {})
+            host.id = host_id
+            host.sid = sid
+            host.profile = profile
+            host.hostname = hostname
+
+            data.append(host)
+
+        return data
+
+    def get_host_config(self, host_id):
+        """
+        Get up2date configuration for the host by db ID.
+        """
+        self.db.cursor.execute("SELECT BODY FROM configs WHERE HID = ?", (host_id,))
+        for cfg in self.db.cursor.fetchall():
+            return eval(cfg[0])
