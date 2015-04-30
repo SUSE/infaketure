@@ -111,6 +111,6 @@ class DBOperations(DBStorage):
         """
         Get up2date configuration for the host by db ID.
         """
-        self.db.cursor.execute("SELECT BODY FROM configs WHERE HID = ?", (host_id,))
-        for cfg in self.db.cursor.fetchall():
+        self.cursor.execute("SELECT BODY FROM configs WHERE HID = ?", (host_id,))
+        for cfg in self.cursor.fetchall():
             return eval(cfg[0])
