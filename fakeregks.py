@@ -311,7 +311,7 @@ class VirtualRegistration(object):
                 print "Refreshing {0} ({1})".format(host.hostname, host.sid)
             cli = check.CheckCli(self.db.get_host_config(host.id), host.profile, hostname=host.hostname)
             cli.verbose = self.verbose
-            cli.main()
+            self.start_process(multiprocessing.Process(target=cli.main))
 
     def register(self, profile):
         """
