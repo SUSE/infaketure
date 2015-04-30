@@ -60,6 +60,7 @@ class DBStorage(object):
                 self.cursor.execute("DROP TABLE {0}".format(table_name[0]))
             self.connection.commit()
         self._run_init_queries()
+        self.vacuum()
 
     def get_next_id(self, table, field="id"):
         """
