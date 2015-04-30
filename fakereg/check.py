@@ -96,10 +96,8 @@ class CheckCli(rhncli.RhnCli):
 
         self.server = self.get_server()
 
-        CheckCli.__update_system_id()
-
         self.__run_remote_actions()
-        CheckCli.__run_local_actions()
+        self.__run_local_actions()
 
         s = rhnserver.RhnServer()
         if s.capabilities.hasCapability('staging_content', 1) and self.cfg['stagingContent'] != 0:
@@ -192,7 +190,7 @@ class CheckCli(rhncli.RhnCli):
         log.log_debug("handle_action actionid = %s, version = %s" % (action['id'], action['version']))
 
         (method, params) = self.__parse_action_data(action)
-        (status, message, data) = CheckCli.__run_action(method, params, {'cache_only': cache_only})
+        (status, message, data) = self.__run_action(method, params, {'cache_only': cache_only})
 
         if not cache_only:
             log.log_debug("Sending back response", (status, message, data))
@@ -224,15 +222,7 @@ class CheckCli(rhncli.RhnCli):
             return False
         return True
 
-    @staticmethod
-    def __update_system_id():
-        try:
-            up2dateAuth.maybeUpdateVersion()
-        except up2dateErrors.CommunicationError, e:
-            print e
-
-    @staticmethod
-    def __run_local_actions():
+    def __run_local_actions(self):
         """
         Hit any actions that we want to always run.
 
@@ -242,31 +232,26 @@ class CheckCli(rhncli.RhnCli):
         for method_params in LOCAL_ACTIONS:
             method = method_params[0]
             params = method_params[1]
-            (status, message, data) = CheckCli.__run_action(method, params)
+            (status, message, data) = self.__run_action(method, params)
             log.log_debug("local action status: ", (status, message, data))
 
-    def __do_call(self, method, params, kwargs={}):
-        retval = actions.Dispatcher(method)(*params, **kwargs)
-        if method == "reboot.reboot":
-            # Make sure SUMA accepts the reboot
-            if self.verbose:
-                print "\tINFO: Reboot scheduled. Pausing for a few seconds..."
-            time.sleep(6)
-        else:
-            if self.verbose:
-                print "Call: '{0}', return: {1}".format(method, retval)
-
-        return retval
-
-    @staticmethod
-    def __run_action(method, params, kwargs={}):
+    def __run_action(self, method, params, kwargs={}):
         try:
-            status, message, data = self.__do_call(method, params, kwargs)
+            retval = actions.Dispatcher(method)(*params, **kwargs)
+            if method == "reboot.reboot":
+                # Make sure SUMA accepts the reboot
+                if self.verbose:
+                    print "\tINFO: Reboot scheduled. Pausing for a few seconds..."
+                time.sleep(6)
+            else:
+                if self.verbose:
+                    print "Call: '{0}', return: {1}".format(method, retval)
+            return retval
         except Exception as ex:
+            import traceback
+            traceback.print_exc(file=sys.stdout)
             log.log_exception(*sys.exc_info())
-            status, message, data = 6, "Unhandled exception had occurred", {}
-
-        return status, message, data
+            return 6, "Unhandled exception had occurred", {}
 
     @staticmethod
     def __check_instance_lock():
