@@ -76,6 +76,14 @@ class DBStorage(object):
         self.cursor.execute("DELETE FROM " + table)
         self.connection.commit()
 
+    def vacuum(self):
+        """
+        Vacuum the database.
+        """
+        self.cursor.execute("VACUUM")
+        self.close()
+        self.open()
+
     def close(self):
         """
         Close the database connection.
