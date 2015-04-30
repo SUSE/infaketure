@@ -166,6 +166,15 @@ class VirtualRegistration(object):
 
         rhnreg.getProductProfile = _getProductProfile
         self.__processes = list()
+
+    def start_process(self, process):
+        """
+        Start process and join it.
+        """
+        process.daemon = True
+        process.start()
+        self.__processes.append(process)
+
     def wait_processes(self):
         """
         Wait until processes finished.
@@ -258,13 +267,8 @@ class VirtualRegistration(object):
             for host in self.db.get_all_hosts():
                 fh.add_history(host.hostname)
 
-            processes = list()
             for idx in range(vr.amount):
-                process = multiprocessing.Process(target=self.register, args=(CMDBProfile(fh(), idx=idx),))
-                process.daemon = True
-                process.start()
-                processes.append(process)
-
+                self.start_process(multiprocessing.Process(target=self.register, args=(CMDBProfile(fh(), idx=idx),)))
 
         self.wait_processes()
         self.db.close()
@@ -282,7 +286,8 @@ class VirtualRegistration(object):
             if not wipe and system['sid'] in host_sids or wipe:
                 if self.verbose:
                     print "Removing {0} ({1})".format(system['name'], system['sid'])
-                self.api.system.delete_system_by_sid(system['id'])
+                self.start_process(multiprocessing.Process(target=self.api.system.delete_system_by_sid,
+                                                           args=(system['id'],)))
         if self.verbose and systems:
             print "Done"
 
