@@ -14,6 +14,7 @@ from xml.dom import minidom as dom
 from fakereg import check
 from fakereg import hostnames
 from fakereg import store
+from fakereg import spaceapi
 
 sys.path.append("/usr/share/rhn/")
 
@@ -146,6 +147,7 @@ class VirtualRegistration(object):
         self.verbose = False
         self._initialize()
 
+        self.api = spaceapi.SpaceAPI("http://{0}/rpc/api".format(self.options.fqdn))
         rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(self.options.fqdn))
         rhnreg.getCaps()
 
@@ -186,11 +188,18 @@ class VirtualRegistration(object):
                        help="Run rhn_check on registered systems.")
         opt.add_option("-v", "--verbose", action="store_true", dest="verbose",
                        help="Talk to me!")
+        opt.add_option("-f", "--flush", action="store_true", dest="flush",
+                       help="Flush all the systems on the SUSE Manager.")
+        opt.add_option("-u", "--user", action="store", dest="user",
+                       help="User ID for the administrator.")
+        opt.add_option("-p", "--password", action="store", dest="password",
+                       help="Password for the administrator")
 
         self.options, self.args = opt.parse_args()
 
         # Check the required parameters
-        if not self.options.refresh and (not self.options.key or not self.options.fqdn):
+        if (not self.options.refresh and not self.options.flush) \
+                and (not self.options.key or not self.options.fqdn):
             sys.argv.append("-h")
             opt.parse_args()
 
@@ -212,6 +221,11 @@ class VirtualRegistration(object):
         if self.options.verbose:
             self.verbose = True
 
+        if self.options.flush:
+            if not self.options.user or not self.options.password:
+                raise VirtualRegistration.VRException(
+                    "User and/or password must be given to authorise against SUSE Manager.")
+
         self.db = store.DBOperations(_dbstore_file)
         self.db.open()
 
@@ -221,6 +235,8 @@ class VirtualRegistration(object):
         """
         if self.options.refresh:
             self.refresh()
+        elif self.options.flush:
+            self.flush()
         else:
             for idx in range(vr.amount):
                 vr.register(CMDBProfile(fh(), idx=idx))
