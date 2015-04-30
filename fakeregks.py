@@ -249,12 +249,14 @@ class VirtualRegistration(object):
         """
         self.api.login(self.options.user, self.options.password)
 
+        host_sids = [host.sid for host in self.db.get_all_hosts()]
         # Flush hosts in SUMA
         systems = self.api.system.get_systems()
         for system in systems:
-            if self.verbose:
-                print "Removing {0} ({1})".format(system['name'], system['sid'])
-            self.api.system.delete_system_by_sid(system['id'])
+            if not wipe and system['sid'] in host_sids or wipe:
+                if self.verbose:
+                    print "Removing {0} ({1})".format(system['name'], system['sid'])
+                self.api.system.delete_system_by_sid(system['id'])
         if self.verbose and systems:
             print "Done"
 
