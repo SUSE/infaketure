@@ -238,6 +238,10 @@ class VirtualRegistration(object):
         elif self.options.flush:
             self.flush()
         else:
+            fh = hostnames.FakeNames(fqdn=True)
+            for host in self.db.get_all_hosts():
+                fh.add_history(host.hostname)
+
             for idx in range(vr.amount):
                 vr.register(CMDBProfile(fh(), idx=idx))
 
@@ -326,7 +330,6 @@ class VirtualRegistration(object):
 if __name__ == '__main__':
     #try:
     if 1:
-        fh = hostnames.FakeNames(fqdn=True)
         vr = VirtualRegistration()
         vr.main()
     #except VirtualRegistration.VRException as ex:

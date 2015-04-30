@@ -39,6 +39,15 @@ class FakeNames(object):
                 continue
             self._crack_dict.append(line)
 
+
+    def add_history(self, hostname):
+        """
+        Add hostname to the history.
+        """
+        hostname = hostname.split(".")[0]
+        if hostname not in self._history:
+            self._history.append(hostname)
+
     def ubuntify(self):
         """
         Msidling with a rock-n-roll! \m/
@@ -69,6 +78,6 @@ class FakeNames(object):
         if name in self._history:
             while name not in self._history:
                 name = pattern.format(*self.ubuntify())
-        self._history.append(name)
+        self.add_history(name)
 
-        return self._history[-1] + self._domain
+        return name + self._domain
