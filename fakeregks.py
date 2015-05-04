@@ -273,6 +273,17 @@ class VirtualRegistration(object):
         self.wait_processes()
         self.db.close()
 
+    def _flush_host_by_sid(self, sid):
+        """
+        Delete one host in a sync.
+        """
+        try:
+            self.api.system.delete_system_by_sid(sid)
+            self.db.delete_host_by_id(sid)
+            self.db.connection.commit()
+        except Exception as ex:
+            print "Error deleting host:", ex
+
     def flush(self, wipe=False):
         """
         Flush the SUSE Manager and reset the internal DB.
@@ -286,23 +297,12 @@ class VirtualRegistration(object):
             if not wipe and system['sid'] in host_sids or wipe:
                 if self.verbose:
                     print "Removing {0} ({1})".format(system['name'], system['sid'])
-                self.start_process(multiprocessing.Process(target=self.api.system.delete_system_by_sid,
-                                                           args=(system['id'],)))
+                self.start_process(multiprocessing.Process(target=self._flush_host_by_sid, args=(system['id'],)))
         if self.verbose and systems:
             print "Done"
 
         self.wait_processes()
-
-        # Flush local database
-        if systems:
-            if self.verbose:
-                print "Purging the database."
-            self.db.purge()
-            if self.verbose:
-                print "Done"
-        else:
-            if self.verbose:
-                print "No systems found."
+        self.db.vacuum()
 
     def refresh(self):
         """

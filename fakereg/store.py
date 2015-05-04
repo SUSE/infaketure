@@ -123,3 +123,29 @@ class DBOperations(DBStorage):
         self.cursor.execute("SELECT BODY FROM configs WHERE HID = ?", (host_id,))
         for cfg in self.cursor.fetchall():
             return eval(cfg[0])
+
+    def get_host_by_id(self, host_id):
+        """
+        Get host by an id.
+        """
+        self.cursor.execute("SELECT ID, SID, HOSTNAME, SID_XML FROM HOSTS WHERE SID = ?", ("ID-{0}".format(host_id),))
+        for host_id, sid, hostname, profile in self.cursor.fetchall():
+            host = type('class', (object,), {})
+            host.id = host_id
+            host.sid = sid
+            host.profile = profile
+            host.hostname = hostname
+            return host
+
+    def delete_host_by_id(self, host_id):
+        """
+        Delete host by id.
+        """
+        host = self.get_host_by_id(host_id)
+        if not host:
+            raise Exception("Unable to find host with SID '{0}'".format(host_id))
+
+        self.cursor.execute("DELETE FROM HOSTS WHERE ID = ?", (host.id,))
+        self.cursor.execute("DELETE FROM CONFIGS WHERE HID = ?", (host.id,))
+        self.cursor.execute("DELETE FROM HARDWARE WHERE HID = ?", (host.id,))
+        self.cursor.execute("DELETE FROM PACKAGES WHERE HID = ?", (host.id,))
