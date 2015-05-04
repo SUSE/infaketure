@@ -291,6 +291,8 @@ class VirtualRegistration(object):
         if self.verbose and systems:
             print "Done"
 
+        self.wait_processes()
+
         # Flush local database
         if systems:
             if self.verbose:
