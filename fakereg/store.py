@@ -149,3 +149,12 @@ class DBOperations(DBStorage):
         self.cursor.execute("DELETE FROM CONFIGS WHERE HID = ?", (host.id,))
         self.cursor.execute("DELETE FROM HARDWARE WHERE HID = ?", (host.id,))
         self.cursor.execute("DELETE FROM PACKAGES WHERE HID = ?", (host.id,))
+
+    def get_max_id(self, table):
+        """
+        Get currently max ID from table.
+        """
+        self.cursor.execute("SELECT max(id) FROM {0}".format(table))
+        ret = self.cursor.fetchall()
+
+        return ret[0][0] or 0 if ret else 0

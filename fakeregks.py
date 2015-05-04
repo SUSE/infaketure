@@ -88,7 +88,6 @@ class CMDBProfile(object):
                         if ipv6addr.get('addr'):
                             ipv6addr['addr'] = self._gen_ip(ipv6=True)
 
-
     def _gen_mac(self):
         """
         Generate a fake MAC address.
@@ -158,6 +157,7 @@ class VirtualRegistration(object):
             '''
             Mocker. Needs to be saved to the SQLite!
             '''
+            time.sleep(0.1)
             profile = get_suse_product_profile()
             profile['guid'] = uuid.uuid4().hex
             profile['secret'] = uuid.uuid4().hex
@@ -167,13 +167,18 @@ class VirtualRegistration(object):
         rhnreg.getProductProfile = _getProductProfile
         self.__processes = list()
 
-    def start_process(self, process):
+    def start_process(self, process, join=False):
         """
         Start process and join it.
         """
-        process.daemon = True
+        if not join:
+            process.daemon = True
         process.start()
-        self.__processes.append(process)
+
+        if join:
+            process.join()
+        else:
+            self.__processes.append(process)
 
     def wait_processes(self):
         """
@@ -266,11 +271,13 @@ class VirtualRegistration(object):
             fh = hostnames.FakeNames(fqdn=True)
             for host in self.db.get_all_hosts():
                 fh.add_history(host.hostname)
-
+            idx_offset = self.db.get_max_id("hosts")
             for idx in range(vr.amount):
-                self.start_process(multiprocessing.Process(target=self.register, args=(CMDBProfile(fh(), idx=idx),)))
-
+                self.start_process(multiprocessing.Process(target=self.register,
+                                                           args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)),
+                                   join=True)
         self.wait_processes()
+        self.db.vacuum()
         self.db.close()
 
     def _flush_host_by_sid(self, sid):
@@ -300,9 +307,6 @@ class VirtualRegistration(object):
                 self.start_process(multiprocessing.Process(target=self._flush_host_by_sid, args=(system['id'],)))
         if self.verbose and systems:
             print "Done"
-
-        self.wait_processes()
-        self.db.vacuum()
 
     def refresh(self):
         """
