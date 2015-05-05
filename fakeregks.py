@@ -7,6 +7,7 @@
 import sys
 import os
 import time
+import re
 from optparse import Option
 from optparse import OptionParser
 import random
@@ -48,13 +49,27 @@ class CMDBProfile(object):
              Index of the node. This is like "seed" to the random, to make distinct MAC, IPs etc.
         """
         self.idx = idx
+        self.sid = self.__sid = None
         self.params = dict()
         self.hostname = hostname
+        self.name = None  # Profile name
         self.id = self.hostname
-        self.packages = pkgUtils.getInstalledPackageList(getArch=(rhnreg.cfg['supportsExtendedPackageProfile'] and 1 or 0))
-
+        self.packages = pkgUtils.getInstalledPackageList(
+            getArch=(rhnreg.cfg['supportsExtendedPackageProfile'] and 1 or 0))
+        self.src = None
         self._gen_hardware()
         self._get_virtuid()
+
+    @property
+    def sid(self):
+        return self.__sid
+
+    @sid.setter
+    def sid(self, sid):
+        """
+        Set SID
+        """
+        self.__sid = re.sub(r"\D", "", str(sid))
 
     def _get_virtuid(self):
         """
@@ -323,18 +338,19 @@ class VirtualRegistration(object):
         """
         Register one system based on profile.
         """
-        sid = None
         xmldata = XMLData()
         try:
-            sid = rhnreg.registerSystem(token=self.options.key,
-                                        profileName=profile.id,
-                                        other=profile.params)
-            xmldata.load(sid)
-            print "Registered {0} with System ID {1}".format(xmldata.get_member('profile_name'),
-                                                             xmldata.get_member('system_id'))
+            profile.src = rhnreg.registerSystem(token=self.options.key,
+                                                profileName=profile.id,
+                                                other=profile.params)
+            xmldata.load(profile.src)
+            profile.sid = xmldata.get_member('system_id')
+            profile.name = xmldata.get_member('profile_name')
+            print "Registered {0} with System ID {1}".format(profile.name, profile.sid)
+
             host_id = self.db.get_next_id("hosts") + 1
             self.db.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
-                                   (host_id, xmldata.get_member("system_id"), xmldata.get_member("profile_name"), sid,))
+                                   (host_id, xmldata.get_member("system_id"), profile.name, profile.src,))
             hardware_id = self.db.get_next_id("hardware") + 1
             self.db.cursor.execute("INSERT INTO hardware (ID, HID, BODY) VALUES (?, ?, ?)",
                                    (hardware_id, host_id, str(profile.hardware),))
@@ -344,6 +360,7 @@ class VirtualRegistration(object):
             packages_id = self.db.get_next_id("configs") + 1
             self.db.cursor.execute("INSERT INTO packages (ID, HID, BODY) VALUES (?, ?, ?)",
                                    (packages_id, host_id, str(profile.packages)))
+            self.db.save_profile(profile)
             self.db.connection.commit()
         except (up2dateErrors.AuthenticationTicketError,
                 up2dateErrors.RhnUuidUniquenessError,
@@ -352,12 +369,12 @@ class VirtualRegistration(object):
             print "WARNING: Registration error: {0}".format(e.errmsg)
             return
 
-        rhnreg.sendHardware(sid, profile.hardware)
-        rhnreg.sendPackages(sid, profile.packages)
-        rhnreg.sendVirtInfo(sid)
+        rhnreg.sendHardware(profile.src, profile.hardware)
+        rhnreg.sendPackages(profile.src, profile.packages)
+        rhnreg.sendVirtInfo(profile.src)
         rhnreg.startRhnsd()
 
-        check.CheckCli(rhnreg.cfg, sid, hostname=xmldata.get_member('profile_name')).main()
+        check.CheckCli(rhnreg.cfg, profile.src, hostname=xmldata.get_member('profile_name')).main()
 
 
 if __name__ == '__main__':
