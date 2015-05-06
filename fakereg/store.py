@@ -253,4 +253,4 @@ class DBOperations(DBStorage):
         for pkg in profile.packages:
             if _diff(pkg, _in(pkg, current_packages) or {}, "epoch", "version", "release", "arch"):
                 self.cursor.execute("UPDATE {0} SET EPOCH = ?, VERSION = ?, RELEASE = ?, ARCH = ? WHERE NAME = ?".format(pkg_table),
-                                    (pkg["epoch"], pkg["version"], pkg["release"], pkg["arch"],))
+                                    (pkg["epoch"], pkg["version"], pkg["release"], pkg["arch"], pkg["name"]))
