@@ -241,7 +241,7 @@ class DBOperations(DBStorage):
                 self.cursor.execute("DELETE FROM {0} WHERE NAME = ?".format(pkg_table), (pkg['name'],))
 
         # Add packages that were installed
-        idx = self.get_next_id(pkg_table)
+        idx = self.get_next_id(pkg_table) + 1
         for pkg in profile.packages:
             if not _in(pkg, current_packages):
                 self.cursor.execute("INSERT INTO {0} (ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME) "
