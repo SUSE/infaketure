@@ -147,6 +147,26 @@ class DBOperations(DBStorage):
         self.cursor.execute("DELETE FROM CONFIGS WHERE HID = ?", (host.id,))
         self.cursor.execute("DELETE FROM HARDWARE WHERE HID = ?", (host.id,))
 
+    def get_host_packages(self, host_id):
+        """
+        Return packages for a client.
+        """
+        host = self.get_host_by_id(host_id)
+        if not host:
+            raise Exception("Host not found with SID '{0}'.".format(host_id))
+
+        pkgs = list()
+        self.cursor.execute("SELECT ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME "
+                            "FROM {0}".format("SYS{0}PKG".format(host_id)))
+        for db_pkg in self.cursor.fetchall():
+            pkg_id, hid, name, epoch, version, release, arch, installtime = db_pkg
+            pkgs.append({
+                "__pkg_id": pkg_id, "__host_id": hid,
+                "epoch": epoch, "version": version, "release": release, "arch": arch, "installtime": installtime,
+            })
+
+        return pkgs
+
     def create_profile(self, db_host_id, profile):
         """
         Create profile for the system.
