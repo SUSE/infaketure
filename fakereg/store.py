@@ -147,7 +147,7 @@ class DBOperations(DBStorage):
         self.cursor.execute("DELETE FROM CONFIGS WHERE HID = ?", (host.id,))
         self.cursor.execute("DELETE FROM HARDWARE WHERE HID = ?", (host.id,))
 
-    def create_profile(self, hid, profile):
+    def create_profile(self, db_host_id, profile):
         """
         Create profile for the system.
         If exists, remove previous.
@@ -161,6 +161,6 @@ class DBOperations(DBStorage):
         for pkg in profile.packages:
             self.cursor.execute("INSERT INTO {0} (ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME) "
                                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)".format(table_name),
-                                (idx, hid, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
+                                (idx, db_host_id, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
                                  pkg.get("release", ""), pkg.get("arch", ""), pkg.get("installtime", 0),))
             idx += 1
