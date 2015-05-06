@@ -271,8 +271,8 @@ class VirtualRegistration(object):
             self.flush()
         else:
             fh = hostnames.FakeNames(fqdn=True)
-            for host in self.db.get_all_hosts():
-                fh.add_history(host.hostname)
+            for profile in self.db.get_host_profiles():
+                fh.add_history(profile.hostname)
             idx_offset = self.db.get_next_id("hosts")
             for idx in range(vr.amount):
                 self.start_process(multiprocessing.Process(target=self.register,
@@ -299,7 +299,7 @@ class VirtualRegistration(object):
         """
         self.api.login(self.options.user, self.options.password)
 
-        host_sids = [host.sid for host in self.db.get_all_hosts()]
+        host_sids = ["ID-{0}".format(host.sid) for host in self.db.get_host_profiles()]
         # Flush hosts in SUMA
         systems = self.api.system.get_systems()
         for system in systems:
@@ -314,10 +314,10 @@ class VirtualRegistration(object):
         """
         Refresh profiles by running rhn_check over them.
         """
-        for host in self.db.get_all_hosts():
+        for profile in self.db.get_host_profiles():
             if self.verbose:
-                print "Refreshing {0} ({1})".format(host.hostname, host.sid)
-            cli = check.CheckCli(self.db.get_host_config(host.id), host.profile, hostname=host.hostname)
+                print "Refreshing {0} ({1})".format(profile.hostname, profile.sid)
+            cli = check.CheckCli(self.db.get_host_config(profile.id), profile.src, hostname=profile.hostname)
             cli.verbose = self.verbose
             self.start_process(multiprocessing.Process(target=cli.main))
 
@@ -333,11 +333,11 @@ class VirtualRegistration(object):
             xmldata.load(profile.src)
             profile.sid = xmldata.get_member('system_id')
             profile.name = xmldata.get_member('profile_name')
-            print "Registered {0} with System ID {1}".format(profile.name, profile.sid)
-
+            print "Registered {0} with System ID {1}".format(xmldata.get_member('profile_name'),
+                                                             xmldata.get_member('system_id'))
             host_id = self.db.get_next_id("hosts") + 1
             self.db.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
-                                   (host_id, xmldata.get_member("system_id"), profile.name, profile.src,))
+                                   (host_id, profile.sid, profile.name, profile.src,))
             hardware_id = self.db.get_next_id("hardware") + 1
             self.db.cursor.execute("INSERT INTO hardware (ID, HID, BODY) VALUES (?, ?, ?)",
                                    (hardware_id, host_id, str(profile.hardware),))

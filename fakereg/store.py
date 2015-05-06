@@ -118,22 +118,27 @@ class DBOperations(DBStorage):
     Operations over the database.
     """
 
-    def get_all_hosts(self):
+    def get_host_profiles(self, host_id=None):
         """
-        Return all hosts.
+        Return all hosts, or specific one.
         """
         data = list()
-        self.cursor.execute("SELECT ID, SID, HOSTNAME, SID_XML FROM HOSTS")
-        for host_id, sid, hostname, profile in self.cursor.fetchall():
-            host = type('class', (object,), {})
-            host.id = host_id
+        if host_id:
+            self.cursor.execute("SELECT ID, SID, HOSTNAME, SID_XML FROM HOSTS WHERE SID = ?", (host_id,))
+        else:
+            self.cursor.execute("SELECT ID, SID, HOSTNAME, SID_XML FROM HOSTS")
+
+        for hid, sid, hostname, profile in self.cursor.fetchall():
+            host = CMDBBaseProfile()
+            host.id = hid
             host.sid = sid
-            host.profile = profile
+            host.src = profile
             host.hostname = hostname
+            host.packages = self.get_host_packages(sid)
 
             data.append(host)
 
-        return data
+        return data[0] if host_id is not None else data
 
     def get_host_config(self, host_id):
         """
@@ -143,24 +148,11 @@ class DBOperations(DBStorage):
         for cfg in self.cursor.fetchall():
             return eval(cfg[0])
 
-    def get_host_by_id(self, host_id):
-        """
-        Get host by an id.
-        """
-        self.cursor.execute("SELECT ID, SID, HOSTNAME, SID_XML FROM HOSTS WHERE SID = ?", ("ID-{0}".format(host_id),))
-        for host_id, sid, hostname, profile in self.cursor.fetchall():
-            host = type('class', (object,), {})
-            host.id = host_id
-            host.sid = sid
-            host.profile = profile
-            host.hostname = hostname
-            return host
-
     def delete_host_by_id(self, host_id):
         """
         Delete host by id.
         """
-        host = self.get_host_by_id(host_id)
+        host = self.get_host_profiles(host_id=host_id)
         if not host:
             raise Exception("Unable to find host with SID '{0}'".format(host_id))
 
@@ -172,10 +164,6 @@ class DBOperations(DBStorage):
         """
         Return packages for a client.
         """
-        host = self.get_host_by_id(host_id)
-        if not host:
-            raise Exception("Host not found with SID '{0}'.".format(host_id))
-
         pkgs = list()
         self.cursor.execute("SELECT ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME "
                             "FROM {0}".format("SYS{0}PKG".format(host_id)))
@@ -205,3 +193,4 @@ class DBOperations(DBStorage):
                                 (idx, db_host_id, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
                                  pkg.get("release", ""), pkg.get("arch", ""), pkg.get("installtime", 0),))
             idx += 1
+
