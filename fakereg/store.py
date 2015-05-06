@@ -6,6 +6,8 @@
 import sqlite3
 import re
 
+from up2date_client import rhnreg
+
 
 class CMDBBaseProfile(object):
     """
