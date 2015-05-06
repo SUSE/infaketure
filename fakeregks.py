@@ -7,7 +7,6 @@
 import sys
 import os
 import time
-import re
 from optparse import Option
 from optparse import OptionParser
 import random
@@ -30,9 +29,9 @@ from up2date_client import rhncli
 from suseRegister.info import getProductProfile as get_suse_product_profile
 
 
-class CMDBProfile(object):
+class CMDBProfile(store.CMDBBaseProfile):
     """
-    System profile container that has all the data about fake system.
+    System specific profile container that has all the data about fake system.
     """
 
     class CPException(Exception):
@@ -48,28 +47,16 @@ class CMDBProfile(object):
           idx:
              Index of the node. This is like "seed" to the random, to make distinct MAC, IPs etc.
         """
+        store.CMDBBaseProfile.__init__(self)
         self.idx = idx
-        self.sid = self.__sid = None
         self.params = dict()
         self.hostname = hostname
-        self.name = None  # Profile name
         self.id = self.hostname
         self.packages = pkgUtils.getInstalledPackageList(
             getArch=(rhnreg.cfg['supportsExtendedPackageProfile'] and 1 or 0))
         self.src = None
         self._gen_hardware()
         self._get_virtuid()
-
-    @property
-    def sid(self):
-        return self.__sid
-
-    @sid.setter
-    def sid(self, sid):
-        """
-        Set SID
-        """
-        self.__sid = re.sub(r"\D", "", str(sid))
 
     def _get_virtuid(self):
         """

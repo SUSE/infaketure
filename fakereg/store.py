@@ -4,6 +4,27 @@
 #
 
 import sqlite3
+import re
+
+
+class CMDBBaseProfile(object):
+    """
+    System base profile container that has all the data about fake system.
+    """
+    def __init__(self):
+        self.sid = self.__sid = None
+        self.name = None  # Profile name
+
+    @property
+    def sid(self):
+        return self.__sid
+
+    @sid.setter
+    def sid(self, sid):
+        """
+        Set SID
+        """
+        self.__sid = re.sub(r"\D", "", str(sid))
 
 
 class DBStorage(object):
