@@ -203,7 +203,7 @@ class DBOperations(DBStorage):
         for pkg in profile.packages:
             self.cursor.execute("INSERT INTO {0} (ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME) "
                                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)".format(table_name),
-                                (idx, db_host_id, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
+                                (idx, host_id, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
                                  pkg.get("release", ""), pkg.get("arch", ""), pkg.get("installtime", 0),))
             idx += 1
 
