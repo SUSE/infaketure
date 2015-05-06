@@ -19,8 +19,6 @@ class DBStorage(object):
                                  "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
         self.init_queries.append("CREATE TABLE hardware "
                                  "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
-        self.init_queries.append("CREATE TABLE packages "
-                                 "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
 
     def open(self, new=False):
         """
@@ -148,7 +146,21 @@ class DBOperations(DBStorage):
         self.cursor.execute("DELETE FROM HOSTS WHERE ID = ?", (host.id,))
         self.cursor.execute("DELETE FROM CONFIGS WHERE HID = ?", (host.id,))
         self.cursor.execute("DELETE FROM HARDWARE WHERE HID = ?", (host.id,))
-        self.cursor.execute("DELETE FROM PACKAGES WHERE HID = ?", (host.id,))
 
+    def create_profile(self, hid, profile):
         """
+        Create profile for the system.
+        If exists, remove previous.
         """
+        table_name = "SYS{0}PKG".format(profile.sid)
+        self.cursor.execute("DROP TABLE IF EXISTS {0}".format(table_name))
+        self.cursor.execute("CREATE TABLE {0} (id INTEGER PRIMARY KEY, HID INTEGER, NAME CHAR(255), "
+                            "EPOCH CHAR(255), VERSION CHAR(255), RELEASE CHAR(255), ARCH CHAR(255), "
+                            "INSTALLTIME INTEGER)".format(table_name))
+        idx = 0
+        for pkg in profile.packages:
+            self.cursor.execute("INSERT INTO {0} (ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME) "
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)".format(table_name),
+                                (idx, hid, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
+                                 pkg.get("release", ""), pkg.get("arch", ""), pkg.get("installtime", 0),))
+            idx += 1

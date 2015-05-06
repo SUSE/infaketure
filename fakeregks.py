@@ -357,10 +357,7 @@ class VirtualRegistration(object):
             cfg_id = self.db.get_next_id("configs") + 1
             self.db.cursor.execute("INSERT INTO configs (ID, HID, BODY) VALUES (?, ?, ?)",
                                    (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
-            packages_id = self.db.get_next_id("configs") + 1
-            self.db.cursor.execute("INSERT INTO packages (ID, HID, BODY) VALUES (?, ?, ?)",
-                                   (packages_id, host_id, str(profile.packages)))
-            self.db.save_profile(profile)
+            self.db.create_profile(host_id, profile)
             self.db.connection.commit()
         except (up2dateErrors.AuthenticationTicketError,
                 up2dateErrors.RhnUuidUniquenessError,
