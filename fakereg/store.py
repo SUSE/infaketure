@@ -207,3 +207,32 @@ class DBOperations(DBStorage):
                                  pkg.get("release", ""), pkg.get("arch", ""), pkg.get("installtime", 0),))
             idx += 1
 
+    def update_profile(self, profile):
+        """
+        Update profile data.
+        """
+        # XXX: Currently packages only
+        pkg_table = "SYS{0}PKG".format(profile.sid)
+        def _in(pkg, pkgs):
+            for pkg_ in pkgs:
+                if pkg['name'] == pkg_['name']:
+                    return True
+            return False
+
+        current_packages = self.get_host_packages(profile.sid)
+        # Remove packages that was uninstalled
+        for pkg in current_packages:
+            if not _in(pkg, profile.packages):
+                self.cursor.execute("DELETE FROM {0} WHERE NAME = ?".format(pkg_table), (pkg['name'],))
+
+        # Add packages that were installed
+        idx = self.get_next_id(pkg_table)
+        for pkg in profile.packages:
+            if not _in(pkg, current_packages):
+                self.cursor.execute("INSERT INTO {0} (ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME) "
+                                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)".format(pkg_table),
+                                    (idx, 0, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
+                                     pkg.get("release", ""), pkg.get("arch", ""), pkg.get("installtime", 0),))
+
+        # Update packages that were changed
+        pass
