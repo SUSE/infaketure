@@ -215,9 +215,22 @@ class DBOperations(DBStorage):
         """
         # XXX: Currently packages only
         pkg_table = "SYS{0}PKG".format(profile.sid)
-        def _in(pkg, pkgs):
+
+        def _in(pkg, pkgs, field="name"):
+            """
+            Is pkg in pkgs by name.
+            """
             for pkg_ in pkgs:
-                if pkg['name'] == pkg_['name']:
+                if pkg[field] == pkg_[field]:
+                    return pkg_
+            return False
+
+        def _diff(pkg, src_pkg, *fields):
+            """
+            Compare pkg against src_pkg by fields.
+            """
+            for field in fields:
+                if pkg.get(field) != src_pkg.get(field):
                     return True
             return False
 
@@ -237,4 +250,7 @@ class DBOperations(DBStorage):
                                      pkg.get("release", ""), pkg.get("arch", ""), pkg.get("installtime", 0),))
 
         # Update packages that were changed
-        pass
+        for pkg in profile.packages:
+            if _diff(pkg, _in(pkg, current_packages) or {}, "epoch", "version", "release", "arch"):
+                self.cursor.execute("UPDATE {0} SET EPOCH = ?, VERSION = ?, RELEASE = ?, ARCH = ? WHERE NAME = ?".format(pkg_table),
+                                    (pkg["epoch"], pkg["version"], pkg["release"], pkg["arch"],))
