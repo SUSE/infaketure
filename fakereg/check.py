@@ -53,7 +53,7 @@ from up2date_client import clientCaps
 from up2date_client import capabilities
 from up2date_client import rhncli, rhnserver
 
-from fakereg import actions
+import actions
 
 from rhn import rhnLockfile
 from rhn import rpclib
@@ -73,13 +73,15 @@ LOCAL_ACTIONS = [("packages.checkNeedUpdate", ("rhnsd=1",))]
 
 class CheckCli(rhncli.RhnCli):
 
-    def __init__(self, cfg, sid, hostname=None):
+    def __init__(self, cfg, sid, dbconn, system_id, hostname=None):
         self.cfg = cfg
+        self.db = dbconn
         self.rhns_ca_cert = self.cfg['sslCACert']
         self.server = None
         self.options = list()
         self.args = list()
-        self.sid = sid
+        self.sid = sid              # This is the entire XML source, not a System ID
+        self.system_id = system_id  # This is a system ID without "ID-" prefix
         self.verbose = False
         self.hostname = hostname and hostname.split(".")[0] or None
 
@@ -237,7 +239,7 @@ class CheckCli(rhncli.RhnCli):
 
     def __run_action(self, method, params, kwargs={}):
         try:
-            retval = actions.Dispatcher(method)(*params, **kwargs)
+            retval = actions.Dispatcher(self.db, self.system_id, method)(*params, **kwargs)
             if method == "reboot.reboot":
                 # Make sure SUMA accepts the reboot
                 if self.verbose:

@@ -317,9 +317,11 @@ class VirtualRegistration(object):
         for profile in self.db.get_host_profiles():
             if self.verbose:
                 print "Refreshing {0} ({1})".format(profile.hostname, profile.sid)
-            cli = check.CheckCli(self.db.get_host_config(profile.id), profile.src, hostname=profile.hostname)
+            cli = check.CheckCli(self.db.get_host_config(profile.id), profile.src, self.db, profile.sid,
+                                 hostname=profile.hostname)
             cli.verbose = self.verbose
             self.start_process(multiprocessing.Process(target=cli.main))
+            #self.db.update_profile(profile)
 
     def register(self, profile):
         """
@@ -349,7 +351,7 @@ class VirtualRegistration(object):
         rhnreg.sendVirtInfo(profile.src)
         rhnreg.startRhnsd()
 
-        check.CheckCli(rhnreg.cfg, profile.src, hostname=xmldata.get_member('profile_name')).main()
+        check.CheckCli(rhnreg.cfg, profile.src, self.db, hostname=xmldata.get_member('profile_name')).main()
 
 
 if __name__ == '__main__':
