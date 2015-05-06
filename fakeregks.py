@@ -333,19 +333,10 @@ class VirtualRegistration(object):
             xmldata.load(profile.src)
             profile.sid = xmldata.get_member('system_id')
             profile.name = xmldata.get_member('profile_name')
+            self.db.create_profile(profile)
+            self.db.connection.commit()
             print "Registered {0} with System ID {1}".format(xmldata.get_member('profile_name'),
                                                              xmldata.get_member('system_id'))
-            host_id = self.db.get_next_id("hosts") + 1
-            self.db.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
-                                   (host_id, profile.sid, profile.name, profile.src,))
-            hardware_id = self.db.get_next_id("hardware") + 1
-            self.db.cursor.execute("INSERT INTO hardware (ID, HID, BODY) VALUES (?, ?, ?)",
-                                   (hardware_id, host_id, str(profile.hardware),))
-            cfg_id = self.db.get_next_id("configs") + 1
-            self.db.cursor.execute("INSERT INTO configs (ID, HID, BODY) VALUES (?, ?, ?)",
-                                   (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
-            self.db.create_profile(host_id, profile)
-            self.db.connection.commit()
         except (up2dateErrors.AuthenticationTicketError,
                 up2dateErrors.RhnUuidUniquenessError,
                 up2dateErrors.CommunicationError,

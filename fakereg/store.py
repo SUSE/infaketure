@@ -176,11 +176,22 @@ class DBOperations(DBStorage):
 
         return pkgs
 
-    def create_profile(self, db_host_id, profile):
+    def create_profile(self, profile):
         """
         Create profile for the system.
         If exists, remove previous.
         """
+        host_id = self.get_next_id("hosts") + 1
+        self.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
+                            (host_id, profile.sid, profile.name, profile.src,))
+        hardware_id = self.get_next_id("hardware") + 1
+        self.cursor.execute("INSERT INTO hardware (ID, HID, BODY) VALUES (?, ?, ?)",
+                            (hardware_id, host_id, str(profile.hardware),))
+        cfg_id = self.get_next_id("configs") + 1
+        self.cursor.execute("INSERT INTO configs (ID, HID, BODY) VALUES (?, ?, ?)",
+                            (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
+
+        # Packages
         table_name = "SYS{0}PKG".format(profile.sid)
         self.cursor.execute("DROP TABLE IF EXISTS {0}".format(table_name))
         self.cursor.execute("CREATE TABLE {0} (id INTEGER PRIMARY KEY, HID INTEGER, NAME CHAR(255), "
