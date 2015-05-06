@@ -171,7 +171,9 @@ class DBOperations(DBStorage):
             pkg_id, hid, name, epoch, version, release, arch, installtime = db_pkg
             pkgs.append({
                 "__pkg_id": pkg_id, "__host_id": hid,
-                "epoch": epoch, "version": version, "release": release, "arch": arch, "installtime": installtime,
+                "epoch": epoch, "version": version,
+                "release": release, "arch": arch,
+                "installtime": installtime, "name": name,
             })
 
         return pkgs
