@@ -195,7 +195,8 @@ class CheckCli(rhncli.RhnCli):
         (status, message, data) = self.__run_action(method, params, {'cache_only': cache_only})
 
         if not cache_only:
-            log.log_debug("Sending back response", (status, message, data))
+            if self.verbose:
+                print "Sending back response for action ID {0}".format(action["id"])
             self.submit_response(action['id'], status, message, data)
         else:
             if self.verbose:
