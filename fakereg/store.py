@@ -238,11 +238,13 @@ class DBOperations(DBStorage):
         # Remove packages that was uninstalled
         for pkg in current_packages:
             if not _in(pkg, profile.packages):
+                # print "DELETE:", pkg["name"]
                 self.cursor.execute("DELETE FROM {0} WHERE NAME = ?".format(pkg_table), (pkg['name'],))
 
         # Add packages that were installed
         for pkg in profile.packages:
             if not _in(pkg, current_packages):
+                # print "ADD:", pkg["name"]
                 idx = self.get_next_id(pkg_table) + 1
                 self.cursor.execute("INSERT INTO {0} (ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME) "
                                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)".format(pkg_table),
@@ -252,5 +254,6 @@ class DBOperations(DBStorage):
         # Update packages that were changed
         for pkg in profile.packages:
             if _diff(pkg, _in(pkg, current_packages) or {}, "epoch", "version", "release", "arch"):
+                # print "UPDATE:", pkg["name"]
                 self.cursor.execute("UPDATE {0} SET EPOCH = ?, VERSION = ?, RELEASE = ?, ARCH = ? WHERE NAME = ?".format(pkg_table),
                                     (pkg["epoch"], pkg["version"], pkg["release"], pkg["arch"], pkg["name"]))
