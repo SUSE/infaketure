@@ -231,7 +231,7 @@ class CheckCli(rhncli.RhnCli):
 
     def __run_action(self, method, params, kwargs={}):
         try:
-            retval = actions.Dispatcher(self.db, self.system_id, method)(*params, **kwargs)
+            retval = actions.Dispatcher(self, self.system_id, method)(*params, **kwargs)
             if method == "reboot.reboot":
                 # Make sure SUMA accepts the reboot
                 if self.verbose:
