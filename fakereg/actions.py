@@ -3,6 +3,8 @@
 #
 # Author: BOFH <bo@suse.de>
 
+import pkgactions
+
 
 class Action(object):
     def __init__(self, **returners):
@@ -19,10 +21,12 @@ class Action(object):
 
 
 class Dispatcher(object):
-    def __init__(self, path=None):
+    def __init__(self, parent, sid, path=None):
         """
         Action dispatcher.
         """
+        self.parent = parent
+        self.sid = sid
         self.__traverse_path__ = []
         for element in (path or "").split("."):
             getattr(self, element)
@@ -45,7 +49,7 @@ class Dispatcher(object):
                                                      "(or package list recently updated)", {}),
                                  setLocks=(0, "Wrote /etc/zypp/locks", {}),
                                  remove=Dispatcher.no_ops_response,
-                                 update=Dispatcher.no_ops_response,
+                                 update=pkgactions.PackageActions(self.parent, self.sid).update,
                                  patch_install=Dispatcher.no_ops_response,
                                  runTransaction=Dispatcher.no_ops_response,
                                  fullUpdate=Dispatcher.no_ops_response,
@@ -73,4 +77,5 @@ class Dispatcher(object):
 
 
 if __name__ == '__main__':
-    print Dispatcher().test.test.test.woo.hoo.foobar("are", you="puzzled?")  # Returns (2, 'Foo')
+    print Dispatcher(None, None).test.test.test.woo.hoo.foobar("are", you="puzzled?")  # Returns (2, 'Foo')
+    print Dispatcher(None, None, "packages.update")("foo", bar="spam")

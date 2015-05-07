@@ -29,9 +29,9 @@ from up2date_client import rhncli
 from suseRegister.info import getProductProfile as get_suse_product_profile
 
 
-class CMDBProfile(object):
+class CMDBProfile(store.CMDBBaseProfile):
     """
-    System profile container that has all the data about fake system.
+    System specific profile container that has all the data about fake system.
     """
 
     class CPException(Exception):
@@ -47,12 +47,14 @@ class CMDBProfile(object):
           idx:
              Index of the node. This is like "seed" to the random, to make distinct MAC, IPs etc.
         """
+        store.CMDBBaseProfile.__init__(self)
         self.idx = idx
         self.params = dict()
         self.hostname = hostname
         self.id = self.hostname
-        self.packages = pkgUtils.getInstalledPackageList(getArch=(rhnreg.cfg['supportsExtendedPackageProfile'] and 1 or 0))
-
+        self.packages = pkgUtils.getInstalledPackageList(
+            getArch=(rhnreg.cfg['supportsExtendedPackageProfile'] and 1 or 0))
+        self.src = None
         self._gen_hardware()
         self._get_virtuid()
 
@@ -269,9 +271,9 @@ class VirtualRegistration(object):
             self.flush()
         else:
             fh = hostnames.FakeNames(fqdn=True)
-            for host in self.db.get_all_hosts():
-                fh.add_history(host.hostname)
-            idx_offset = self.db.get_max_id("hosts")
+            for profile in self.db.get_host_profiles():
+                fh.add_history(profile.hostname)
+            idx_offset = self.db.get_next_id("hosts")
             for idx in range(vr.amount):
                 self.start_process(multiprocessing.Process(target=self.register,
                                                            args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)),
@@ -297,7 +299,7 @@ class VirtualRegistration(object):
         """
         self.api.login(self.options.user, self.options.password)
 
-        host_sids = [host.sid for host in self.db.get_all_hosts()]
+        host_sids = ["ID-{0}".format(host.sid) for host in self.db.get_host_profiles()]
         # Flush hosts in SUMA
         systems = self.api.system.get_systems()
         for system in systems:
@@ -312,10 +314,13 @@ class VirtualRegistration(object):
         """
         Refresh profiles by running rhn_check over them.
         """
-        for host in self.db.get_all_hosts():
+        for profile in self.db.get_host_profiles():
             if self.verbose:
-                print "Refreshing {0} ({1})".format(host.hostname, host.sid)
-            cli = check.CheckCli(self.db.get_host_config(host.id), host.profile, hostname=host.hostname)
+                print "Refreshing {0} ({1})".format(profile.hostname, profile.sid)
+
+            # TODO: pass the entire profile instead of its pieces!
+            cli = check.CheckCli(self.db.get_host_config(profile.id), profile.src, self.db, profile.sid, profile,
+                                 hostname=profile.hostname)
             cli.verbose = self.verbose
             self.start_process(multiprocessing.Process(target=cli.main))
 
@@ -323,28 +328,18 @@ class VirtualRegistration(object):
         """
         Register one system based on profile.
         """
-        sid = None
         xmldata = XMLData()
         try:
-            sid = rhnreg.registerSystem(token=self.options.key,
-                                        profileName=profile.id,
-                                        other=profile.params)
-            xmldata.load(sid)
+            profile.src = rhnreg.registerSystem(token=self.options.key,
+                                                profileName=profile.id,
+                                                other=profile.params)
+            xmldata.load(profile.src)
+            profile.sid = xmldata.get_member('system_id')
+            profile.name = xmldata.get_member('profile_name')
+            self.db.create_profile(profile)
+            self.db.connection.commit()
             print "Registered {0} with System ID {1}".format(xmldata.get_member('profile_name'),
                                                              xmldata.get_member('system_id'))
-            host_id = self.db.get_next_id("hosts") + 1
-            self.db.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
-                                   (host_id, xmldata.get_member("system_id"), xmldata.get_member("profile_name"), sid,))
-            hardware_id = self.db.get_next_id("hardware") + 1
-            self.db.cursor.execute("INSERT INTO hardware (ID, HID, BODY) VALUES (?, ?, ?)",
-                                   (hardware_id, host_id, str(profile.hardware),))
-            cfg_id = self.db.get_next_id("configs") + 1
-            self.db.cursor.execute("INSERT INTO configs (ID, HID, BODY) VALUES (?, ?, ?)",
-                                   (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
-            packages_id = self.db.get_next_id("configs") + 1
-            self.db.cursor.execute("INSERT INTO packages (ID, HID, BODY) VALUES (?, ?, ?)",
-                                   (packages_id, host_id, str(profile.packages)))
-            self.db.connection.commit()
         except (up2dateErrors.AuthenticationTicketError,
                 up2dateErrors.RhnUuidUniquenessError,
                 up2dateErrors.CommunicationError,
@@ -352,12 +347,12 @@ class VirtualRegistration(object):
             print "WARNING: Registration error: {0}".format(e.errmsg)
             return
 
-        rhnreg.sendHardware(sid, profile.hardware)
-        rhnreg.sendPackages(sid, profile.packages)
-        rhnreg.sendVirtInfo(sid)
+        rhnreg.sendHardware(profile.src, profile.hardware)
+        rhnreg.sendPackages(profile.src, profile.packages)
+        rhnreg.sendVirtInfo(profile.src)
         rhnreg.startRhnsd()
 
-        check.CheckCli(rhnreg.cfg, sid, hostname=xmldata.get_member('profile_name')).main()
+        check.CheckCli(rhnreg.cfg, profile.src, self.db, profile.sid, profile, hostname=profile.hostname).main()
 
 
 if __name__ == '__main__':

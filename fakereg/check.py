@@ -30,33 +30,25 @@
 # files in the program, then also delete it here.
 import os
 import sys
-import socket
-import socket
 import time
-import httplib
-import urllib2
 import xmlrpclib
 import urlparse
 
-from OpenSSL import SSL
 sys.path.append("/usr/share/rhn/")
 sys.modules['sgmlop'] = None
 
-from up2date_client import getMethod
 from up2date_client import up2dateErrors
-from up2date_client import up2dateAuth
 from up2date_client import up2dateLog
 from up2date_client import up2dateUtils
 from up2date_client import config
 from up2date_client import rpcServer
+from up2date_client import rhnserver
 from up2date_client import clientCaps
 from up2date_client import capabilities
 from up2date_client import rhncli, rhnserver
 
-from fakereg import actions
+import actions
 
-from rhn import rhnLockfile
-from rhn import rpclib
 del sys.modules['sgmlop']
 
 log = up2dateLog.initLog()
@@ -71,17 +63,27 @@ DISABLE_FILE = "/etc/sysconfig/rhn/disable"
 LOCAL_ACTIONS = [("packages.checkNeedUpdate", ("rhnsd=1",))]
 
 
+class FakeRHNServer(rhnserver.RhnServer):
+
+    def __init__(self, server):
+        self._server = server
+        self._capabilities = None
+
+
 class CheckCli(rhncli.RhnCli):
 
-    def __init__(self, cfg, sid, hostname=None):
+    def __init__(self, cfg, sid, dbconn, system_id, profile, hostname=None):
         self.cfg = cfg
+        self.db = dbconn
         self.rhns_ca_cert = self.cfg['sslCACert']
         self.server = None
         self.options = list()
         self.args = list()
-        self.sid = sid
+        self.sid = sid              # This is the entire XML source, not a System ID
+        self.system_id = system_id  # This is a system ID without "ID-" prefix
         self.verbose = False
         self.hostname = hostname and hostname.split(".")[0] or None
+        self.profile = profile
 
     def initialize(self):
         pass
@@ -193,7 +195,8 @@ class CheckCli(rhncli.RhnCli):
         (status, message, data) = self.__run_action(method, params, {'cache_only': cache_only})
 
         if not cache_only:
-            log.log_debug("Sending back response", (status, message, data))
+            if self.verbose:
+                print "Sending back response for action ID {0}".format(action["id"])
             self.submit_response(action['id'], status, message, data)
         else:
             if self.verbose:
@@ -237,7 +240,7 @@ class CheckCli(rhncli.RhnCli):
 
     def __run_action(self, method, params, kwargs={}):
         try:
-            retval = actions.Dispatcher(method)(*params, **kwargs)
+            retval = actions.Dispatcher(self, self.system_id, method)(*params, **kwargs)
             if method == "reboot.reboot":
                 # Make sure SUMA accepts the reboot
                 if self.verbose:
