@@ -30,33 +30,25 @@
 # files in the program, then also delete it here.
 import os
 import sys
-import socket
-import socket
 import time
-import httplib
-import urllib2
 import xmlrpclib
 import urlparse
 
-from OpenSSL import SSL
 sys.path.append("/usr/share/rhn/")
 sys.modules['sgmlop'] = None
 
-from up2date_client import getMethod
 from up2date_client import up2dateErrors
-from up2date_client import up2dateAuth
 from up2date_client import up2dateLog
 from up2date_client import up2dateUtils
 from up2date_client import config
 from up2date_client import rpcServer
+from up2date_client import rhnserver
 from up2date_client import clientCaps
 from up2date_client import capabilities
 from up2date_client import rhncli, rhnserver
 
 import actions
 
-from rhn import rhnLockfile
-from rhn import rpclib
 del sys.modules['sgmlop']
 
 log = up2dateLog.initLog()
