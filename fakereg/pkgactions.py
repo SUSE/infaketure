@@ -3,13 +3,14 @@
 # Author: bo@suse.de
 #
 
+import check
 
 class PackageActions(object):
     """
     Package actions responder.
     """
-    def __init__(self, db, sid):
-        self.db = db
+    def __init__(self, caller, sid):
+        self.caller = caller
         self.sid = sid
 
     def update(self, *packages, **kwargs):
@@ -20,29 +21,33 @@ class PackageActions(object):
         :param kwargs:
         :return:
         """
-        profile = self.db.get_host_profiles(host_id=self.sid)
-        for pkg in packages:
-            n, v, r, e, a = pkg[0]
-            print "Update called over SID", self.sid
+        if not packages:
+            return 1, "No packages has been requested", {}
+
+        profile = self.caller.db.get_host_profiles(host_id=self.sid)
+        packages = packages[0]
+        for n_pkg_meta in packages:
+            n, v, r, e, a = n_pkg_meta
+            package = dict()
+            package["name"] = n
+            package["epoch"] = e
+            package["version"] = v
+            package["release"] = r
+            package["arch"] = a
+
+            # Existing package update
             prf_pkgs = list()
-            update_pkg = dict()
-            for package in profile.packages:
-                if package.get('name') == n:
-                    update_pkg = package.copy()
-                else:
-                    prf_pkgs.append(package)
+            for p_pkg in profile.packages:
+                if p_pkg.get('name') != n:
+                    prf_pkgs.append(p_pkg)
+
+            prf_pkgs.append(package)
             profile.packages = prf_pkgs[:]
             del prf_pkgs
 
-            update_pkg["name"] = n
-            update_pkg["epoch"] = e
-            update_pkg["version"] = v
-            update_pkg["release"] = r
-            update_pkg["arch"] = a
-
-            profile.packages.append(update_pkg)
-            self.db.update_profile(profile)
-        self.db.connection.commit()
+        self.caller.db.update_profile(profile)
+        self.caller.db.connection.commit()
+        check.FakeRHNServer(self.caller.get_server()).registration.update_packages(profile.src, profile.packages)
 
         return 0, "{0} Fake package{1} has been updated".format(len(packages), len(packages) > 1 and "s" or ""), {}
 
