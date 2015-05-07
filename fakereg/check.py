@@ -72,7 +72,7 @@ class FakeRHNServer(rhnserver.RhnServer):
 
 class CheckCli(rhncli.RhnCli):
 
-    def __init__(self, cfg, sid, dbconn, system_id, hostname=None):
+    def __init__(self, cfg, sid, dbconn, system_id, profile, hostname=None):
         self.cfg = cfg
         self.db = dbconn
         self.rhns_ca_cert = self.cfg['sslCACert']
@@ -83,6 +83,7 @@ class CheckCli(rhncli.RhnCli):
         self.system_id = system_id  # This is a system ID without "ID-" prefix
         self.verbose = False
         self.hostname = hostname and hostname.split(".")[0] or None
+        self.profile = profile
 
     def initialize(self):
         pass
