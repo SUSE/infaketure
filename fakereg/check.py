@@ -63,6 +63,13 @@ DISABLE_FILE = "/etc/sysconfig/rhn/disable"
 LOCAL_ACTIONS = [("packages.checkNeedUpdate", ("rhnsd=1",))]
 
 
+class FakeRHNServer(rhnserver.RhnServer):
+
+    def __init__(self, server):
+        self._server = server
+        self._capabilities = None
+
+
 class CheckCli(rhncli.RhnCli):
 
     def __init__(self, cfg, sid, dbconn, system_id, hostname=None):
