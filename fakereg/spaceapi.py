@@ -4,6 +4,7 @@
 #
 
 import xmlrpclib
+import datetime
 
 
 class _BaseSpaceAPI(object):
@@ -52,6 +53,12 @@ class _SystemsAPI(_BaseSpaceAPI):
         Delete registered system.
         """
         self.conn.system.deleteSystem(self.token, sid)
+
+    def install_package(self, sid, *pkg_ids):
+        """
+        Schedule packages installation.
+        """
+        self.conn.system.schedulePackageInstall(self.token, sid, pkg_ids, datetime.datetime.now())
 
 
 class SpaceAPI(_BaseSpaceAPI):
