@@ -54,6 +54,12 @@ class _SystemsAPI(_BaseSpaceAPI):
         """
         self.conn.system.deleteSystem(self.token, sid)
 
+    def get_available_packages(self, sid):
+        """
+        Get the list of all available packages.
+        """
+        return self.conn.system.listLatestInstallablePackages(self.token, sid)
+
     def install_package(self, sid, *pkg_ids):
         """
         Schedule packages installation.
