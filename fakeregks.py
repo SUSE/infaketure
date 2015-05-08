@@ -18,6 +18,7 @@ from fakereg import check
 from fakereg import hostnames
 from fakereg import store
 from fakereg import spaceapi
+from fakereg import loadproc
 
 sys.path.append("/usr/share/rhn/")
 
@@ -25,7 +26,6 @@ from up2date_client import rhnreg
 from up2date_client import hardware
 from up2date_client import pkgUtils
 from up2date_client import up2dateErrors
-from up2date_client import rhncli
 from suseRegister.info import getProductProfile as get_suse_product_profile
 
 
@@ -202,11 +202,11 @@ class VirtualRegistration(object):
         _dbstore_file = os.path.join(os.path.abspath("."), "store.db")
         opt = OptionParser(version="Bloody Alpha, 0.1")
         opt.add_option("-m", "--manager-hostname", action="store", dest="fqdn",
-                       help="Specify an activation key")
+                       help="Specify an activation key.")
         opt.add_option("-k", "--activation-key", action="store", dest="key",
-                       help="Specify an activation key")
+                       help="Specify an activation key.")
         opt.add_option("-c", "--sslCACert", action="store", dest="cacert",
-                       help="Specify a file to use as the ssl CA cert")
+                       help="Specify a file to use as the ssl CA cert.")
         opt.add_option("-a", "--hosts-amount", action="store", dest="amount",
                        help="Specify an amount of fake hosts to be registered. Default 5.")
         opt.add_option("-b", "--base-name", action="store", dest="base",
@@ -216,6 +216,8 @@ class VirtualRegistration(object):
         opt.add_option("-d", "--database-file", action="store", dest="dbfile",
                        help="Specify a path to SQLite3 database. "
                             "Default is '{0}'.".format(_dbstore_file))
+        opt.add_option("-l", "--simulate-scenario", action="store", dest="scenario",
+                       help="Path to a scenario that simulates particular load.")
         opt.add_option("-r", "--refresh", action="store_true", dest="refresh",
                        help="Run rhn_check on registered systems.")
         opt.add_option("-v", "--verbose", action="store_true", dest="verbose",
@@ -225,12 +227,12 @@ class VirtualRegistration(object):
         opt.add_option("-u", "--user", action="store", dest="user",
                        help="User ID for the administrator.")
         opt.add_option("-p", "--password", action="store", dest="password",
-                       help="Password for the administrator")
+                       help="Password for the administrator.")
 
         self.options, self.args = opt.parse_args()
 
         # Check the required parameters
-        if (not self.options.refresh and not self.options.flush) \
+        if (not self.options.refresh and not self.options.flush and not self.options.scenario) \
                 and (not self.options.key or not self.options.fqdn):
             sys.argv.append("-h")
             opt.parse_args()
@@ -261,11 +263,25 @@ class VirtualRegistration(object):
         self.db = store.DBOperations(_dbstore_file)
         self.db.open()
 
+    def scenario(self):
+        """
+        Run scenario.
+        """
+        # 1. Scenario is extracted from SUMA as its working load.
+        # 2. Run scenario scheduling on SUMA server, refresh affected clients
+        self.api.login(self.options.user, self.options.password)
+
+        runner = loadproc.LoadScenarioCaller(loadproc.LoadScheduleProcessor(self.db, self.api))
+        runner.load_scenario(self.options.scenario)
+        runner.run(callback=self.refresh)
+
     def main(self):
         """
         Main
         """
-        if self.options.refresh:
+        if self.options.scenario:
+            self.scenario()
+        elif self.options.refresh:
             self.refresh()
         elif self.options.flush:
             self.flush()

@@ -1,0 +1,18 @@
+# Loop is a number. 0 is forever, or N times.
+# Example:
+#    loop.cycle = 0
+#    loop.cycle = 2
+loop.cycle = 2
+
+# Sleep of the loop (seconds)
+# Example:
+#    loop.sleep = 0
+#    loop.sleep = 15
+loop.sleep = 1
+
+#
+# These are actual calls below
+#
+#downgrade 123 234 345
+install pkg:300 download:false io:true
+#remove amount:1 3
