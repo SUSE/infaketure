@@ -18,6 +18,7 @@ from fakereg import check
 from fakereg import hostnames
 from fakereg import store
 from fakereg import spaceapi
+from fakereg import loadproc
 
 sys.path.append("/usr/share/rhn/")
 
@@ -25,7 +26,6 @@ from up2date_client import rhnreg
 from up2date_client import hardware
 from up2date_client import pkgUtils
 from up2date_client import up2dateErrors
-from up2date_client import rhncli
 from suseRegister.info import getProductProfile as get_suse_product_profile
 
 
@@ -269,7 +269,11 @@ class VirtualRegistration(object):
         """
         # 1. Scenario is extracted from SUMA as its working load.
         # 2. Run scenario scheduling on SUMA server, refresh affected clients
-        print "No, not yet..."
+        self.api.login(self.options.user, self.options.password)
+
+        runner = loadproc.LoadScenarioCaller(loadproc.LoadScheduleProcessor(self.db, self.api))
+        runner.load_scenario(self.options.scenario)
+        runner.run(callback=self.refresh)
 
     def main(self):
         """
