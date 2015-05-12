@@ -170,15 +170,6 @@ class PCPConnector(object):
         if stat:
             raise Exception('Unable to remove "{0}": {1}'.format(self._snapshots, msg))
 
-    def _ripoff(self):
-        """
-        Process all collected data and remove the leftovers.
-        :return:
-        """
-        # Extract all probes
-
-        # Copy everything needed
-
     def start(self):
         """
         Start recording the load.
@@ -205,8 +196,6 @@ class PCPConnector(object):
             return
         self.__process.terminate()
         self.__process = None
-
-        self._ripoff()
 
     def get_metrics(self, probe):
         """
