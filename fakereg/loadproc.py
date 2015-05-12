@@ -22,7 +22,7 @@ class LoadScenarioCaller(object):
         """
         self._load_processor = load_processor
         self._scenario = None
-        self._config = {"loop.cycle": 0, "loop.sleep": 10}
+        self.config = {"loop.cycle": 0, "loop.sleep": 10}
 
     def load_scenario(self, scenario):
         """
@@ -38,8 +38,10 @@ class LoadScenarioCaller(object):
                 continue
 
             if "=" in line:  # Config element has key=value syntax
-                k, v = ''.join([elm for elm in line.split(" ") if elm.strip()]).split("=", 1)
-                self._config[k] = v
+                k, v = [elm.strip() for elm in line.strip().split("=", 1)]
+                if "," in v:
+                    v = [elm.strip() for elm in v.split(",")]
+                self.config[k] = v
                 continue
 
             # Command action does not have key=value syntax
@@ -61,7 +63,7 @@ class LoadScenarioCaller(object):
         """
         Run the scenario.
         """
-        cycle = int(self._config.get("loop.cycle", 0))
+        cycle = int(self.config.get("loop.cycle", 0))
         if cycle:
             for iteration in xrange(0, cycle):
                 self.__call()
@@ -83,7 +85,7 @@ class LoadScenarioCaller(object):
             except Exception as ex:
                 print ex
 
-        time.sleep(int(self._config.get("loop.sleep", 10)))
+        time.sleep(int(self.config.get("loop.sleep", 10)))
 
 
 class LoadScheduleProcessor(object):

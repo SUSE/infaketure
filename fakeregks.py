@@ -7,7 +7,7 @@
 import sys
 import os
 import time
-from optparse import Option
+import getpass
 from optparse import OptionParser
 import random
 import uuid
@@ -19,6 +19,7 @@ from fakereg import hostnames
 from fakereg import store
 from fakereg import spaceapi
 from fakereg import loadproc
+from fakereg import pcp
 
 sys.path.append("/usr/share/rhn/")
 
@@ -149,6 +150,7 @@ class VirtualRegistration(object):
         Constructor.
         """
         self.verbose = False
+        self._pcp_metrics_path = None
         self._initialize()
 
         self.api = spaceapi.SpaceAPI("http://{0}/rpc/api".format(self.options.fqdn))
@@ -200,6 +202,7 @@ class VirtualRegistration(object):
         Initialize command line options.
         """
         _dbstore_file = os.path.join(os.path.abspath("."), "store.db")
+        self._pcp_metrics_path = os.path.join(os.path.abspath("."), ".pcp-metrics")
         opt = OptionParser(version="Bloody Alpha, 0.1")
         opt.add_option("-m", "--manager-hostname", action="store", dest="fqdn",
                        help="Specify an activation key.")
@@ -216,6 +219,9 @@ class VirtualRegistration(object):
         opt.add_option("-d", "--database-file", action="store", dest="dbfile",
                        help="Specify a path to SQLite3 database. "
                             "Default is '{0}'.".format(_dbstore_file))
+        opt.add_option("-t", "--pcp-metrics", action="store", dest="pcp_path",
+                       help="Specify a path to PCP metrics dump. "
+                            "Default is '{0}'.".format(self._pcp_metrics_path))
         opt.add_option("-l", "--simulate-scenario", action="store", dest="scenario",
                        help="Path to a scenario that simulates particular load.")
         opt.add_option("-r", "--refresh", action="store_true", dest="refresh",
@@ -232,8 +238,10 @@ class VirtualRegistration(object):
         self.options, self.args = opt.parse_args()
 
         # Check the required parameters
-        if (not self.options.refresh and not self.options.flush and not self.options.scenario) \
-                and (not self.options.key or not self.options.fqdn):
+        if not self.options.fqdn or ((not self.options.refresh
+                                      and not self.options.flush
+                                      and not self.options.scenario)
+                                     and (not self.options.key)):
             sys.argv.append("-h")
             opt.parse_args()
 
@@ -251,6 +259,9 @@ class VirtualRegistration(object):
 
         if self.options.dbfile:
             _dbstore_file = self.options.dbfile
+
+        if self.options.pcp_path:
+            self._pcp_metrics_path = self.options.pcp_path
 
         if self.options.verbose:
             self.verbose = True
@@ -273,7 +284,51 @@ class VirtualRegistration(object):
 
         runner = loadproc.LoadScenarioCaller(loadproc.LoadScheduleProcessor(self.db, self.api))
         runner.load_scenario(self.options.scenario)
+
+        pcp_cfg = {
+            pcp.PCPConnector.CFG_HOST: self.options.fqdn,
+            pcp.PCPConnector.CFG_USER: getpass.getuser(),
+        }
+        if "pcp.snapshot" in runner.config:
+            pcp_cfg[pcp.PCPConnector.CFG_PATH] = runner.config["pcp.snapshot"]
+
+        _pcp = pcp.PCPConnector(pcp_cfg)
+        for cfg_key, cfg_value in runner.config.items():
+            metric_prefix = "pcp.metric."
+            if cfg_key.startswith(metric_prefix):
+                _pcp.probes[cfg_key.replace(metric_prefix, "")] = cfg_value or None
+        _pcp.start()
         runner.run(callback=self.refresh)
+        _pcp.stop()
+        self._save_pcp_metrics(_pcp)
+        _pcp.cleanup()
+
+    def _save_pcp_metrics(self, pcp):
+        """
+        Save PCP metrics.
+        """
+        metrics_path = os.path.join(self._pcp_metrics_path,
+                                    self.options.fqdn,
+                                    time.strftime("%Y%m%d-%H%M%S", time.localtime()))
+        os.makedirs(metrics_path)
+        for probe in sorted(pcp.probes.keys()):
+            metrics = pcp.get_metrics(probe)
+
+            data_fh = open(os.path.join(metrics_path, "{0}.data".format(probe)), "w")
+            idx = 0
+            data_fh.write("# Metrics for {0}\n".format(probe))
+            for data in metrics.get("data"):
+                data_fh.write("{pm_index}\t{pm_data}\n".format(pm_index=idx, pm_data=data))
+                idx += 1
+            data_fh.write("\n")
+            data_fh.close()
+            metrics.pop("data")
+
+            descr_fh = open(os.path.join(metrics_path, "{0}.info".format(probe)), "w")
+            for ds_key in sorted(metrics.keys()):
+                descr_fh.write("{pm_key}:\t{pm_value}\n".format(pm_key=ds_key, pm_value=metrics.get(ds_key)))
+            descr_fh.close()
+
 
     def main(self):
         """
