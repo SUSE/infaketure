@@ -10,9 +10,17 @@ loop.cycle = 2
 #    loop.sleep = 15
 loop.sleep = 1
 
+# PCP-related config starts from "pcp." prefix.
+pcp.snapshot = /tmp/fakereg
+pcp.metric.kernel.all.cpu.user = 
+pcp.metric.kernel.all.cpu.sys = 
+pcp.metric.kernel.all.cpu.load = 1 minute, 5 minute, 15 minute
+pcp.metric.disk.all.read = 
+pcp.metric.disk.all.write = 
+pcp.metric.mem.util.free = 
+pcp.metric.mem.util.cached = 
+
 #
-# These are actual calls below
+# An actual calls
 #
-#downgrade 123 234 345
-install pkg:300 download:false io:true
-#remove amount:1 3
+install pkg:10 download:false io:true
