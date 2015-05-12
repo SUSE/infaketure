@@ -7,7 +7,7 @@
 import sys
 import os
 import time
-from optparse import Option
+import getpass
 from optparse import OptionParser
 import random
 import uuid
@@ -19,6 +19,7 @@ from fakereg import hostnames
 from fakereg import store
 from fakereg import spaceapi
 from fakereg import loadproc
+from fakereg import pcp
 
 sys.path.append("/usr/share/rhn/")
 
