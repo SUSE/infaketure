@@ -274,9 +274,24 @@ class VirtualRegistration(object):
         # 2. Run scenario scheduling on SUMA server, refresh affected clients
         self.api.login(self.options.user, self.options.password)
 
+        _pcp = pcp.PCPConnector({
+            pcp.PCPConnector.CFG_HOST: self.options.fqdn,
+            pcp.PCPConnector.CFG_USER: getpass.getuser(),
+        })
+
         runner = loadproc.LoadScenarioCaller(loadproc.LoadScheduleProcessor(self.db, self.api))
         runner.load_scenario(self.options.scenario)
+
+        for cfg_key, cfg_value in runner.config.items():
+            metric_prefix = "pcp.metric."
+            if cfg_key.startswith(metric_prefix):
+                _pcp.probes[cfg_key.replace(metric_prefix, "")] = cfg_value or None
+        _pcp.start()
         runner.run(callback=self.refresh)
+        _pcp.stop()
+        for probe in sorted(_pcp.probes.keys()):
+            print _pcp.get_metrics(probe)
+        _pcp.cleanup()
 
     def main(self):
         """
