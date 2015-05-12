@@ -38,8 +38,10 @@ class LoadScenarioCaller(object):
                 continue
 
             if "=" in line:  # Config element has key=value syntax
-                k, v = ''.join([elm for elm in line.split(" ") if elm.strip()]).split("=", 1)
-                self._config[k] = v
+                k, v = [elm.strip() for elm in line.strip().split("=", 1)]
+                if "," in v:
+                    v = [elm.strip() for elm in v.split(",")]
+                self.config[k] = v
                 continue
 
             # Command action does not have key=value syntax
