@@ -215,7 +215,7 @@ class PCPConnector(object):
         for line in data.split(os.linesep):
             meta = [item.strip() for item in line.split(":", 1)]
             if meta[0] in ["metric", "start", "end", "semantics", "units", "samples"]:
-                metric.update(dict([meta]))
+                metric.update(dict([tuple(meta)]))
             records = [item.strip() for item in line.replace("\t", " ").split(" ", 1)]
             if len(records[0].replace(".", ":").split(":")) == 4 and records[1].lower().find("no values") < 0:
                 metric["data"].append(records[1])
