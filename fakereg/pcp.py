@@ -95,7 +95,7 @@ class PCPConnector(object):
 
         self._interval = int(config.get(self.CFG_INTERVAL, 1))
         self._ssh = SSHCall(config.get(self.CFG_USER), self._host)
-        self._dest_root = "{0}/{1}/{2}".format(self._snapshots, self._host, self._id)
+        self._dest_root = os.path.join(self._snapshots, self._host, self._id)
         self.__process = None
         self.__folio = os.path.join(self._dest_root, time.strftime("%Y%m%d-%H%M%S", time.localtime()))
 
