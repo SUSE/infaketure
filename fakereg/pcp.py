@@ -61,7 +61,6 @@ class SSHCall(object):
         """
         self.__call(self.SCP_TO_CMD, user=self._user, host=self._host, src_path=src_path, dest_path=dest_path)
 
-
     def copy_from(self, src_path, dest_path):
         """
         Copy files from the remote machine to the local machine.
@@ -159,7 +158,6 @@ class PCPConnector(object):
         self._ssh.copy_to(tmp_path, os.path.join(self._dest_root, "pmloader.config"))
         os.unlink(tmp_path)
 
-
     def cleanup(self):
         """
         Cleanup the data.
@@ -184,7 +182,6 @@ class PCPConnector(object):
         self.__process = multiprocessing.Process(target=self._start)
         self.__process.daemon = True
         self.__process.start()
-
 
     def stop(self):
         """
