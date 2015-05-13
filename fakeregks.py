@@ -329,7 +329,6 @@ class VirtualRegistration(object):
                 descr_fh.write("{pm_key}:\t{pm_value}\n".format(pm_key=ds_key, pm_value=metrics.get(ds_key)))
             descr_fh.close()
 
-
     def main(self):
         """
         Main
@@ -427,11 +426,10 @@ class VirtualRegistration(object):
 
 
 if __name__ == '__main__':
-    #try:
-    if 1:
+    try:
         vr = VirtualRegistration()
         vr.main()
-    #except VirtualRegistration.VRException as ex:
-    #    print "Error:\n  {0}\n".format(ex)
-    #except Exception as ex:
-    #    raise ex
+    except VirtualRegistration.VRException as ex:
+        print "Error:\n  {0}\n".format(ex)
+    except Exception as ex:
+        raise ex
