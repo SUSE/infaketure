@@ -4,7 +4,9 @@
 __author__ = 'BOFH <bo@suse.de>'
 
 import os
+import sys
 import ConfigParser
+from optparse import OptionParser
 
 
 class GNUPlotExporter(object):
@@ -110,12 +112,32 @@ class GNUPlotExporter(object):
         return scripts
 
 if __name__ == '__main__':
-    pcp_data = "/home/bo/gnuplot/advanced"
-    for fname, script in GNUPlotExporter("fakeregplot.conf", pcp_data).generate().items():
-        fname = os.path.join(pcp_data, fname)
+    args = OptionParser(version="Bloody Alpha, 0.1", prog='fakeregplot',
+                        description='Generate GNU Plot views from the Fakereg PCP data.')
+    args.add_option("-p", "--path", help="Path to the PCP snapshot", action="store")
+    args.add_option("-c", "--config", help="Path to the configuration", action="store")
+    if not [elm for elm in sys.argv if elm.startswith("--path")]:
+        sys.argv.append("--help")
+    options, args = args.parse_args()
+
+    options.config = options.config or "./fakeregplot.conf"
+    if not os.path.exists(options.config):
+        print 'Error: cannot access "{conf}" configuration'.format(conf=options.config)
+        sys.exit(1)
+
+    if not os.path.exists(options.path):
+        print 'Error: snapshot "{snapshot}" does not exists'.format(snapshot=options.path)
+        sys.exit(1)
+    elif not [elm for elm in os.listdir(options.path) if elm.split(".")[-1] in ["data", "info"]]:
+        print 'Error: snapshot "{snapshot}" does not seems to be a valid'.format(snapshot=options.path)
+        sys.exit(1)
+
+    for fname, script in GNUPlotExporter(options.config, options.path).generate().items():
+        fname = os.path.join(options.path, fname)
         print "Writing {script} ...\t".format(script=fname),
         scr_fh = open(fname, "w")
         scr_fh.write(script)
         scr_fh.close()
         os.chmod(fname, 0744)
         print "done"
+
