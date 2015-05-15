@@ -1,0 +1,39 @@
+# Loop is a number. 0 is forever, or N times.
+# Example:
+#    loop.cycle = 0
+#    loop.cycle = 2
+loop.cycle = 2
+
+# Sleep of the loop (seconds)
+# Example:
+#    loop.sleep = 0
+#    loop.sleep = 15
+loop.sleep = 1
+
+# PCP-related config starts from "pcp." prefix.
+pcp.snapshot = /tmp/fakereg
+
+pcp.metric.kernel.all.load = 1 minute
+pcp.metric.swap.used =
+pcp.metric.mem.util.free =
+pcp.metric.mem.util.bufmem =
+pcp.metric.mem.util.cached =
+pcp.metric.swap.pagesin =
+pcp.metric.swap.pagesout =
+pcp.metric.disk.all.blkread =
+pcp.metric.disk.all.blkwrite =
+pcp.metric.kernel.all.intr =
+pcp.metric.kernel.all.pswitch =
+pcp.metric.kernel.all.cpu.nice =
+pcp.metric.kernel.all.cpu.user =
+pcp.metric.kernel.all.cpu.intr =
+pcp.metric.kernel.all.cpu.sys =
+pcp.metric.kernel.all.cpu.idle =
+pcp.metric.kernel.all.cpu.wait.total =
+pcp.metric.kernel.all.cpu.steal =
+
+
+#
+# An actual calls
+#
+install pkg:10 download:false io:true
