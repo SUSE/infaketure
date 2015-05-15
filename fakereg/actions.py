@@ -74,8 +74,3 @@ class Dispatcher(object):
         for p_elm in self.__traverse_path__:
             action = getattr(action, p_elm)
         return action(*args, **kwargs)
-
-
-if __name__ == '__main__':
-    print Dispatcher(None, None).test.test.test.woo.hoo.foobar("are", you="puzzled?")  # Returns (2, 'Foo')
-    print Dispatcher(None, None, "packages.update")("foo", bar="spam")

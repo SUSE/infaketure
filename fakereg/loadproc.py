@@ -151,7 +151,6 @@ class LoadScheduleProcessor(object):
             for itr in range(0, int(options.get("pkg", 1))):
                 to_install.append(packages[random.randint(0, len(packages) - 1)]["id"])
             self.api.system.install_package(int(profile.sid), *to_install)
-            print "Installing", len(to_install), "packages on the system", profile.hostname
 
     def remove(self, *sids, **options):
         """

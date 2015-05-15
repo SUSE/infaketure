@@ -61,7 +61,6 @@ class SSHCall(object):
         """
         self.__call(self.SCP_TO_CMD, user=self._user, host=self._host, src_path=src_path, dest_path=dest_path)
 
-
     def copy_from(self, src_path, dest_path):
         """
         Copy files from the remote machine to the local machine.
@@ -96,7 +95,7 @@ class PCPConnector(object):
 
         self._interval = int(config.get(self.CFG_INTERVAL, 1))
         self._ssh = SSHCall(config.get(self.CFG_USER), self._host)
-        self._dest_root = "{0}/{1}/{2}".format(self._snapshots, self._host, self._id)
+        self._dest_root = os.path.join(self._snapshots, self._host, self._id)
         self.__process = None
         self.__folio = os.path.join(self._dest_root, time.strftime("%Y%m%d-%H%M%S", time.localtime()))
 
@@ -159,7 +158,6 @@ class PCPConnector(object):
         self._ssh.copy_to(tmp_path, os.path.join(self._dest_root, "pmloader.config"))
         os.unlink(tmp_path)
 
-
     def cleanup(self):
         """
         Cleanup the data.
@@ -184,7 +182,6 @@ class PCPConnector(object):
         self.__process = multiprocessing.Process(target=self._start)
         self.__process.daemon = True
         self.__process.start()
-
 
     def stop(self):
         """
@@ -218,7 +215,7 @@ class PCPConnector(object):
         for line in data.split(os.linesep):
             meta = [item.strip() for item in line.split(":", 1)]
             if meta[0] in ["metric", "start", "end", "semantics", "units", "samples"]:
-                metric.update(dict([meta]))
+                metric.update(dict([tuple(meta)]))
             records = [item.strip() for item in line.replace("\t", " ").split(" ", 1)]
             if len(records[0].replace(".", ":").split(":")) == 4 and records[1].lower().find("no values") < 0:
                 metric["data"].append(records[1])

@@ -19,7 +19,7 @@ from fakereg import hostnames
 from fakereg import store
 from fakereg import spaceapi
 from fakereg import loadproc
-from fakereg import pcp
+from fakereg.pcp import pcpconn
 
 sys.path.append("/usr/share/rhn/")
 
@@ -286,13 +286,13 @@ class VirtualRegistration(object):
         runner.load_scenario(self.options.scenario)
 
         pcp_cfg = {
-            pcp.PCPConnector.CFG_HOST: self.options.fqdn,
-            pcp.PCPConnector.CFG_USER: getpass.getuser(),
+            pcpconn.PCPConnector.CFG_HOST: self.options.fqdn,
+            pcpconn.PCPConnector.CFG_USER: getpass.getuser(),
         }
         if "pcp.snapshot" in runner.config:
-            pcp_cfg[pcp.PCPConnector.CFG_PATH] = runner.config["pcp.snapshot"]
+            pcp_cfg[pcpconn.PCPConnector.CFG_PATH] = runner.config["pcp.snapshot"]
 
-        _pcp = pcp.PCPConnector(pcp_cfg)
+        _pcp = pcpconn.PCPConnector(pcp_cfg)
         for cfg_key, cfg_value in runner.config.items():
             metric_prefix = "pcp.metric."
             if cfg_key.startswith(metric_prefix):
@@ -328,7 +328,6 @@ class VirtualRegistration(object):
             for ds_key in sorted(metrics.keys()):
                 descr_fh.write("{pm_key}:\t{pm_value}\n".format(pm_key=ds_key, pm_value=metrics.get(ds_key)))
             descr_fh.close()
-
 
     def main(self):
         """
@@ -427,11 +426,10 @@ class VirtualRegistration(object):
 
 
 if __name__ == '__main__':
-    #try:
-    if 1:
+    try:
         vr = VirtualRegistration()
         vr.main()
-    #except VirtualRegistration.VRException as ex:
-    #    print "Error:\n  {0}\n".format(ex)
-    #except Exception as ex:
-    #    raise ex
+    except VirtualRegistration.VRException as ex:
+        print "Error:\n  {0}\n".format(ex)
+    except Exception as ex:
+        raise ex

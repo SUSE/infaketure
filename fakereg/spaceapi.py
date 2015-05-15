@@ -80,19 +80,3 @@ class SpaceAPI(_BaseSpaceAPI):
         super(SpaceAPI, self).login(user, password)
         self.system = _SystemsAPI(self.__url)
         self.system.token = self.token
-
-
-if __name__ == '__main__':
-    b = SpaceAPI("http://sumabench1/rpc/api")
-    b.login("admin", "admin")
-
-    for system in b.system.get_systems():
-        print "Removing", system.get('name')
-        b.system.delete_system_by_sid(system.get('id'))
-
-    if b.system.get_systems():
-        print "Failed"
-    else:
-        print "Succeed"
-
-    b.logout()
