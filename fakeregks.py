@@ -235,6 +235,8 @@ class VirtualRegistration(object):
         opt.add_option("-p", "--password", action="store", dest="password",
                        help="Password for the administrator.")
 
+        self.options, self.args = opt.parse_args()
+
         # Check the required parameters
         if not self.options.fqdn or ((not self.options.refresh
                                       and not self.options.flush
