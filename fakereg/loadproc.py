@@ -64,16 +64,19 @@ class LoadScenarioCaller(object):
         Run the scenario.
         """
         cycle = int(self.config.get("loop.cycle", 0))
+        pause = int(self.config.get("loop.sleep", 0))
         if cycle:
             for iteration in xrange(0, cycle):
                 self.__call()
                 if callback is not None:
                     callback(*cb_args, **cb_kwargs)
+                time.sleep(pause)
         else:
             while True:
                 self.__call()
                 if callback is not None:
                     callback(*cb_args, **cb_kwargs)
+                time.sleep(pause)
 
     def __call(self):
         """
