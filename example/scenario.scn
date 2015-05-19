@@ -2,13 +2,13 @@
 # Example:
 #    loop.cycle = 0
 #    loop.cycle = 2
-loop.cycle = 2
+loop.cycle = 3
 
 # Sleep of the loop (seconds)
 # Example:
 #    loop.sleep = 0
 #    loop.sleep = 15
-loop.sleep = 1
+loop.sleep = 60
 
 # PCP-related config starts from "pcp." prefix.
 pcp.snapshot = /tmp/fakereg
@@ -24,16 +24,16 @@ pcp.metric.disk.all.blkread =
 pcp.metric.disk.all.blkwrite =
 pcp.metric.kernel.all.intr =
 pcp.metric.kernel.all.pswitch =
-pcp.metric.kernel.all.cpu.nice =
+# pcp.metric.kernel.all.cpu.nice =
 pcp.metric.kernel.all.cpu.user =
-pcp.metric.kernel.all.cpu.intr =
+# pcp.metric.kernel.all.cpu.intr =
 pcp.metric.kernel.all.cpu.sys =
-pcp.metric.kernel.all.cpu.idle =
-pcp.metric.kernel.all.cpu.wait.total =
-pcp.metric.kernel.all.cpu.steal =
+# pcp.metric.kernel.all.cpu.idle =
+# pcp.metric.kernel.all.cpu.wait.total =
+# pcp.metric.kernel.all.cpu.steal =
 
 
 #
 # An actual calls
 #
-install pkg:10 download:false io:true
+install pkg:100 download:false io:true
