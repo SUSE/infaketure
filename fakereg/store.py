@@ -5,6 +5,7 @@
 
 import sqlite3
 import re
+import os
 
 from up2date_client import rhnreg
 
@@ -53,7 +54,7 @@ class DBStorage(object):
         if new and os.path.exists(self._path):
             os.unlink(self._path)  # As simple as that
 
-        self.connection = sqlite3.connect(self._path)
+        self.connection = sqlite3.connect(self._path, timeout=1200.0)  # 20 minutes timeout
         self.connection.text_factory = str
         self.cursor = self.connection.cursor()
 
