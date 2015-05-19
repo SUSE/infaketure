@@ -162,6 +162,7 @@ class DBOperations(DBStorage):
         self.cursor.execute("DELETE FROM HOSTS WHERE ID = ?", (host.id,))
         self.cursor.execute("DELETE FROM CONFIGS WHERE HID = ?", (host.id,))
         self.cursor.execute("DELETE FROM HARDWARE WHERE HID = ?", (host.id,))
+        self.cursor.execute("DROP TABLE IF EXISTS SYS{0}PKG".format(host.id))
 
     def get_host_packages(self, host_id):
         """
