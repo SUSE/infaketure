@@ -8,6 +8,8 @@
 import os
 import time
 import random
+import multiprocessing
+import procpool
 
 
 class LoadScenarioCaller(object):
@@ -80,15 +82,15 @@ class LoadScenarioCaller(object):
 
     def __call(self):
         """
-        One tick call.
+        Call scenario params
         """
         for call_params in self._scenario:
             try:
                 getattr(self._load_processor, call_params["method"])(*call_params["args"], **call_params["kwargs"])
             except Exception as ex:
                 print ex
-
         time.sleep(int(self.config.get("loop.sleep", 10)))
+        self._load_processor.pool.join()
 
 
 class LoadScheduleProcessor(object):
@@ -104,6 +106,7 @@ class LoadScheduleProcessor(object):
         """
         self.db = db
         self.api = api
+        self.pool = procpool.Pool()
 
     def check_in(self, *sids):
         """
@@ -149,11 +152,16 @@ class LoadScheduleProcessor(object):
         :return:
         """
         for profile in self.db.get_host_profiles():
-            packages = self.api.system.get_available_packages(int(profile.sid))
-            to_install = list()
-            for itr in range(0, int(options.get("pkg", 1))):
-                to_install.append(packages[random.randint(0, len(packages) - 1)]["id"])
-            self.api.system.install_package(int(profile.sid), *to_install)
+            self.pool.run(multiprocessing.Process(target=self.__install_one, args=(profile,), kwargs=options))
+
+    def __install_one(self, profile, **options):
+        print "Installing on {0}".format(profile.sid)
+        packages = self.api.system.get_available_packages(int(profile.sid))
+        to_install = list()
+        for itr in range(0, int(options.get("pkg", 1))):
+            to_install.append(packages[random.randint(0, len(packages) - 1)]["id"])
+        self.api.system.install_package(int(profile.sid), *to_install)
+        print "Finished {0}".format(profile.sid)
 
     def remove(self, *sids, **options):
         """

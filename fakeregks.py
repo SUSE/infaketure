@@ -20,6 +20,7 @@ from fakereg import store
 from fakereg import spaceapi
 from fakereg import loadproc
 from fakereg.pcp import pcpconn
+from fakereg import procpool
 
 sys.path.append("/usr/share/rhn/")
 
@@ -149,6 +150,7 @@ class VirtualRegistration(object):
         """
         Constructor.
         """
+        self.procpool = procpool.Pool()
         self.verbose = False
         self._pcp_metrics_path = None
         self._initialize()
@@ -170,32 +172,6 @@ class VirtualRegistration(object):
 
         rhnreg.getProductProfile = _getProductProfile
         self.__processes = list()
-
-    def start_process(self, process, join=False):
-        """
-        Start process and join it.
-        """
-        if not join:
-            process.daemon = True
-        process.start()
-
-        if join:
-            process.join()
-        else:
-            self.__processes.append(process)
-
-    def wait_processes(self):
-        """
-        Wait until processes finished.
-        """
-        while True:
-            p_buff = list()
-            for process in self.__processes:
-                if process.is_alive():
-                    p_buff.append(process)
-            self.__processes = p_buff[:]
-            if not self.__processes:
-                break
 
     def _initialize(self):
         """
@@ -346,10 +322,9 @@ class VirtualRegistration(object):
                 fh.add_history(profile.hostname)
             idx_offset = self.db.get_next_id("hosts")
             for idx in range(vr.amount):
-                self.start_process(multiprocessing.Process(target=self.register,
-                                                           args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)),
-                                   join=True)
-        self.wait_processes()
+                self.procpool.run(multiprocessing.Process(target=self.register,
+                                                          args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)), join=True)
+        self.procpool.join()
         self.db.vacuum()
         self.db.close()
 
@@ -377,7 +352,7 @@ class VirtualRegistration(object):
             if not wipe and system['sid'] in host_sids or wipe:
                 if self.verbose:
                     print "Removing {0} ({1})".format(system['name'], system['sid'])
-                self.start_process(multiprocessing.Process(target=self._flush_host_by_sid, args=(system['id'],)))
+                self.procpool.run(multiprocessing.Process(target=self._flush_host_by_sid, args=(system['id'],)))
         if self.verbose and systems:
             print "Done"
 
@@ -393,7 +368,7 @@ class VirtualRegistration(object):
             cli = check.CheckCli(self.db.get_host_config(profile.id), profile.src, self.db, profile.sid, profile,
                                  hostname=profile.hostname)
             cli.verbose = self.verbose
-            self.start_process(multiprocessing.Process(target=cli.main))
+            self.procpool.run(multiprocessing.Process(target=cli.main))
 
     def register(self, profile):
         """
