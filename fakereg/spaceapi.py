@@ -5,6 +5,7 @@
 
 import xmlrpclib
 import datetime
+import time
 
 
 class _BaseSpaceAPI(object):
@@ -19,7 +20,16 @@ class _BaseSpaceAPI(object):
         """
         Login to the Spacewalk.
         """
-        self.token = self.conn.auth.login(user, password)
+        _logged = False
+        for tryout in range(0, 5):
+            try:
+                self.token = self.conn.auth.login(user, password)
+                _logged = True
+            except Exception as ex:
+                print "Login error: {0}. Trying {1} time.".format(ex, (tryout + 1))
+                time.sleep(5)
+            if _logged:
+                break
 
     def logout(self):
         """
