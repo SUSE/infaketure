@@ -136,9 +136,12 @@ class PCPConnector(object):
             raise Exception('No PCP logger found: ' + msg_or_path)
 
         cmd = "{pm_logger} -r -c {pm_config} -h {pm_host} -x0 -l {pm_sys_log} -t {pm_interval}.000000 {pm_folio}"
-        self._ssh.call(cmd.format(pm_config=os.path.join(self._dest_root, "pmloader.config"),
-                                  pm_sys_log=os.path.join(self._dest_root, "pmloader.log"), pm_interval=self._interval,
-                                  pm_host=self._host, pm_logger=msg_or_path, pm_folio=self.__folio))
+        msg, stat = self._ssh.call(cmd.format(pm_config=os.path.join(self._dest_root, "pmloader.config"),
+                                              pm_sys_log=os.path.join(self._dest_root, "pmloader.log"),
+                                              pm_interval=self._interval, pm_host=self._host, pm_logger=msg_or_path,
+                                              pm_folio=self.__folio))
+        if stat:
+            raise Exception("PCP logger quit unexpectedly ({0}): {1}.".format(stat, msg))
 
     def _prepare(self):
         """
