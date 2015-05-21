@@ -73,6 +73,7 @@ class PCPConnector(object):
     PCP connector class which records/snapshots the values and extracts the data.
     """
     CFG_HOST = "__pcp_host_"
+    CFG_LOGGER_HOST = "__pcp_logger_host"
     CFG_PATH = "__pcp_path_to_snapshots_"
     CFG_PROBES = "__pcp_probes_"
     CFG_USER = "__pcp_user_"
@@ -85,6 +86,7 @@ class PCPConnector(object):
         """
         self._id = uuid.uuid4().hex
         self._host = config.get(self.CFG_HOST)
+        self._logger_host = config.get(self.CFG_LOGGER_HOST, self._host)
         self._snapshots = config.get(self.CFG_PATH, '/tmp/fakereg')
         self.probes = config.get(self.CFG_PROBES, dict())
 
@@ -94,7 +96,7 @@ class PCPConnector(object):
             raise Exception("PCP needs user specified")
 
         self._interval = int(config.get(self.CFG_INTERVAL, 1))
-        self._ssh = SSHCall(config.get(self.CFG_USER), self._host)
+        self._ssh = SSHCall(config.get(self.CFG_USER), self._logger_host)
         self._dest_root = os.path.join(self._snapshots, self._host, self._id)
         self.__process = None
         self.__folio = os.path.join(self._dest_root, time.strftime("%Y%m%d-%H%M%S", time.localtime()))

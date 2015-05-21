@@ -181,7 +181,9 @@ class VirtualRegistration(object):
         self._pcp_metrics_path = os.path.join(os.path.abspath("."), ".pcp-metrics")
         opt = OptionParser(version="Bloody Alpha, 0.1")
         opt.add_option("-m", "--manager-hostname", action="store", dest="fqdn",
-                       help="Specify an activation key.")
+                       help="SUSE Manager hostname.")
+        opt.add_option("-o", "--monitor-hostname", action="store", dest="monitor",
+                       help="Alternative PCP monitoring host.")
         opt.add_option("-k", "--activation-key", action="store", dest="key",
                        help="Specify an activation key.")
         opt.add_option("-c", "--sslCACert", action="store", dest="cacert",
@@ -266,6 +268,9 @@ class VirtualRegistration(object):
             pcpconn.PCPConnector.CFG_HOST: self.options.fqdn,
             pcpconn.PCPConnector.CFG_USER: getpass.getuser(),
         }
+        if self.options.monitor:
+            pcp_cfg[pcpconn.PCPConnector.CFG_LOGGER_HOST] = self.options.monitor
+
         if "pcp.snapshot" in runner.config:
             pcp_cfg[pcpconn.PCPConnector.CFG_PATH] = runner.config["pcp.snapshot"]
 
