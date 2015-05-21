@@ -37,3 +37,4 @@ pcp.metric.kernel.all.cpu.sys =
 # An actual calls
 #
 install pkg:100 download:false io:true
+
