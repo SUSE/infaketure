@@ -5,11 +5,43 @@
 # Author: bo@suse.de
 #
 
-import os
 import time
 import random
 import multiprocessing
 import procpool
+import ConfigParser
+
+
+class ScenarioPreprocessor(object):
+    """
+    To make life easier, but still using default Python config parser.
+    This fixes on the fly 'wrong syntax' of the INI file, that Python
+    does not likes.
+    """
+    def __init__(self, scenario):
+        self.idx = 0
+        self.__body = list()
+        for line in open(scenario):
+            line = line.strip()
+            if not line or line.startswith("#"):  # Comments, empty lines
+                continue
+            elif "=" in line and not line.split("=", 1)[1]:  # No value lines
+                line += " void"
+
+            self.__body.append(line)
+
+    def readline(self):
+        """
+        Read one line.
+        """
+
+        if (self.idx + 1) <= len(self.__body):
+            line = self.__body[self.idx]
+            self.idx += 1
+        else:
+            line = None
+
+        return line
 
 
 class LoadScenarioCaller(object):
@@ -27,29 +59,31 @@ class LoadScenarioCaller(object):
         self.config = {"loop.cycle": 0, "loop.sleep": 10}
 
     def load_scenario(self, scenario):
-        """
-        Load scenario and its config.
-        """
-        if not os.path.exists(scenario):
-            raise Exception("Path '{0}' is not accessible.".format(scenario))
-
+        cfg_parser = ConfigParser.ConfigParser()
+        cfg_parser.readfp(ScenarioPreprocessor(scenario))
         self._scenario = list()
-        for line in open(scenario):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
 
-            if "=" in line:  # Config element has key=value syntax
-                k, v = [elm.strip() for elm in line.strip().split("=", 1)]
-                if "," in v:
-                    v = [elm.strip() for elm in v.split(",")]
-                self.config[k] = v
-                continue
+        self.config["loop.cycle"] = cfg_parser.get("loop", "cycle", self.config["loop.cycle"])
+        self.config["loop.sleep"] = cfg_parser.get("loop", "sleep", self.config["loop.sleep"])
 
-            # Command action does not have key=value syntax
-            line = [elm for elm in line.replace("\t", " ").split(" ") if elm]
-            call_meta = {'method': line.pop(0), 'args': list(), 'kwargs': dict()}
-            for param in line:
+        # Get PCP metrics
+        for metric_name in cfg_parser.options("pcp metrics"):
+            metric_args = cfg_parser.get("pcp metrics", metric_name)
+            if metric_args == 'void':
+                metric_args = ""
+            self.config["pcp.metric.{0}".format(metric_name)] = metric_args
+
+        # Get PCP settings
+        for pcp_setting in cfg_parser.options("pcp"):
+            pcp_setting_args = cfg_parser.get("pcp", pcp_setting)
+            self.config["pcp.{0}".format(pcp_setting)] = pcp_setting_args
+
+        # Get actions
+        for action in cfg_parser.options("actions"):
+            call_meta = {'method': action, 'args': list(), 'kwargs': dict()}
+
+            action_params = [elm for elm in cfg_parser.get("actions", action).replace("\t", " ").split(" ") if elm]
+            for param in action_params:
                 param = param.split(":")
                 if len(param) == 1:
                     call_meta['args'].append(param[0])
@@ -155,13 +189,14 @@ class LoadScheduleProcessor(object):
             self.pool.run(multiprocessing.Process(target=self.__install_one, args=(profile,), kwargs=options))
 
     def __install_one(self, profile, **options):
-        print "Installing on {0}".format(profile.sid)
+        amount = int(options.get("pkg", 1))
+        print "Installing {0} packages on {1}".format(amount, profile.sid)
         packages = self.api.system.get_available_packages(int(profile.sid))
         to_install = list()
-        for itr in range(0, int(options.get("pkg", 1))):
+        for itr in range(0, amount):
             to_install.append(packages[random.randint(0, len(packages) - 1)]["id"])
         self.api.system.install_package(int(profile.sid), *to_install)
-        print "Finished {0}".format(profile.sid)
+        print "Package installation finished {0}".format(profile.sid)
 
     def remove(self, *sids, **options):
         """
