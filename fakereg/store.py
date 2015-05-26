@@ -6,8 +6,16 @@
 import sqlite3
 import re
 import os
+import sys
+from fakereg import cli_msg
+from fakereg import ERROR
 
-from up2date_client import rhnreg
+
+try:
+    from up2date_client import rhnreg
+except Exception as error:
+    cli_msg(ERROR, 'Package "{0}" seems not installed'.format("spacewalk-client-setup"))
+    sys.exit(1)
 
 
 class CMDBBaseProfile(object):
