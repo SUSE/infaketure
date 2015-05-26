@@ -189,13 +189,14 @@ class LoadScheduleProcessor(object):
             self.pool.run(multiprocessing.Process(target=self.__install_one, args=(profile,), kwargs=options))
 
     def __install_one(self, profile, **options):
-        print "Installing on {0}".format(profile.sid)
+        amount = int(options.get("pkg", 1))
+        print "Installing {0} packages on {1}".format(amount, profile.sid)
         packages = self.api.system.get_available_packages(int(profile.sid))
         to_install = list()
-        for itr in range(0, int(options.get("pkg", 1))):
+        for itr in range(0, amount):
             to_install.append(packages[random.randint(0, len(packages) - 1)]["id"])
         self.api.system.install_package(int(profile.sid), *to_install)
-        print "Finished {0}".format(profile.sid)
+        print "Package installation finished {0}".format(profile.sid)
 
     def remove(self, *sids, **options):
         """
