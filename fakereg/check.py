@@ -314,8 +314,7 @@ class CheckCli(rhncli.RhnCli):
             refreshCallback=refreshCallback,
             proxy=proxy_host,
             username=proxy_user,
-            password=proxy_password,
-            timeout=timeout)
+            password=proxy_password)
         retry_server.addServerList(server_list)
         retry_server.add_header("X-Up2date-Version", up2dateUtils.version())
 
