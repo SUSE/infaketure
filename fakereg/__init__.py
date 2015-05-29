@@ -6,16 +6,18 @@ WARNING = 1
 ERROR = 2
 
 
-def _info(msg):
+def _info(msg, **kwargs):
     print >> sys.stdout, "INFO:", msg
 
 
-def _warning(msg):
+def _warning(msg, **kwargs):
     print >> sys.stderr, "WARNING:", msg
 
 
-def _error(msg):
+def _error(msg, **kwargs):
     print >> sys.stderr, "ERROR: {0}!".format(msg)
+    if "panic" in kwargs:
+        sys.exit(1)
 
 
 _msg = {
@@ -25,7 +27,7 @@ _msg = {
 }
 
 
-def cli_msg(level, msg):
+def cli_msg(level, msg, **kwargs):
     """
     Print CLI message.
 
@@ -34,4 +36,4 @@ def cli_msg(level, msg):
     :return:
     """
 
-    _msg[ERROR if level not in [INFO, WARNING, ERROR] else level](msg)
+    _msg[ERROR if level not in [INFO, WARNING, ERROR] else level](msg, **kwargs)
