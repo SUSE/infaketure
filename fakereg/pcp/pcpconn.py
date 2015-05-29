@@ -12,6 +12,9 @@ import os
 import time
 import tempfile
 
+from fakereg import cli_msg
+from fakereg import ERROR
+
 
 class SSHCall(object):
     """
@@ -138,12 +141,16 @@ class PCPConnector(object):
             raise Exception('No PCP logger found: ' + msg_or_path)
 
         cmd = "{pm_logger} -r -c {pm_config} -h {pm_host} -x0 -l {pm_sys_log} -t {pm_interval}.000000 {pm_folio}"
+        pm_sys_log = os.path.join(self._dest_root, "pmloader.log")
         msg, stat = self._ssh.call(cmd.format(pm_config=os.path.join(self._dest_root, "pmloader.config"),
-                                              pm_sys_log=os.path.join(self._dest_root, "pmloader.log"),
+                                              pm_sys_log=pm_sys_log,
                                               pm_interval=self._interval, pm_host=self._host, pm_logger=msg_or_path,
                                               pm_folio=self.__folio))
         if stat:
-            raise Exception("PCP logger quit unexpectedly ({0}): {1}.".format(stat, msg))
+            log_msg, log_stat = self._ssh.call("cat {pm_sys_log}".format(pm_sys_log=pm_sys_log))
+            error_msg = "PCP logger quit unexpectedly ({stat}): '{error}'.\nLog:\n{br}\n{log}\n{br}\n".format(
+                stat=stat, error=msg, log=log_msg, br=("-" * 80))
+            cli_msg(ERROR, error_msg)
 
     def _prepare(self):
         """
