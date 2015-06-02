@@ -159,6 +159,16 @@ class DBOperations(DBStorage):
         for cfg in self.cursor.fetchall():
             return eval(cfg[0])
 
+    def get_host_login_info(self, host_id):
+        """
+        Get login info for the host.
+        :param host_id:
+        :return:
+        """
+        self.cursor.execute("SELECT BODY FROM CREDENTIALS WHERE HID = ?", (host_id,))
+        for nfo in self.cursor.fetchall():
+            return pickle.loads(nfo[0])
+
     def delete_host_by_id(self, host_id):
         """
         Delete host by id.
