@@ -57,6 +57,7 @@ class LoadScenarioCaller(object):
         self._load_processor = load_processor
         self._scenario = None
         self.config = {"loop.cycle": 0, "loop.sleep": 10}
+        self.verbose = False
 
     def load_scenario(self, scenario):
         cfg_parser = ConfigParser.ConfigParser()
@@ -101,18 +102,20 @@ class LoadScenarioCaller(object):
         """
         cycle = int(self.config.get("loop.cycle", 0))
         pause = int(self.config.get("loop.sleep", 0))
-        if cycle:
-            for iteration in xrange(0, cycle):
-                self.__call()
-                if callback is not None:
-                    callback(*cb_args, **cb_kwargs)
-                time.sleep(pause)
-        else:
-            while True:
-                self.__call()
-                if callback is not None:
-                    callback(*cb_args, **cb_kwargs)
-                time.sleep(pause)
+
+        iteration = 0
+        while True:
+            if cycle and iteration == cycle:
+                break
+            self.__call()
+            if callback is not None:
+                callback(*cb_args, **cb_kwargs)
+            if self.verbose:
+                print "--- Iteration finished ---"
+                print "Sleeping", pause, "seconds"
+            time.sleep(pause)
+            if cycle:
+                iteration += 1
 
     def __call(self):
         """
