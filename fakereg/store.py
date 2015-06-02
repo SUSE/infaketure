@@ -9,7 +9,7 @@ import os
 import sys
 from fakereg import cli_msg
 from fakereg import ERROR
-
+import pickle
 
 try:
     from up2date_client import rhnreg
@@ -204,6 +204,11 @@ class DBOperations(DBStorage):
         cfg_id = self.get_next_id("configs") + 1
         self.cursor.execute("INSERT INTO configs (ID, HID, BODY) VALUES (?, ?, ?)",
                             (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
+
+        # Credentials
+        self.cursor.execute("CREATE TABLE credentials (HID INTEGER, S_BODY BLOB)")
+        self.cursor.execute("INSERT INTO credentials (HID, S_BODY) VALUES (?, ?)",
+                            (host_id, pickle.dumps(profile.login_info, 0),))
 
         # Packages
         table_name = "SYS{0}PKG".format(profile.sid)

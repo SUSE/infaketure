@@ -29,6 +29,7 @@ from up2date_client import hardware
 from up2date_client import pkgUtils
 from up2date_client import up2dateErrors
 from suseRegister.info import getProductProfile as get_suse_product_profile
+from up2date_client import rhnserver
 
 
 class CMDBProfile(store.CMDBBaseProfile):
@@ -390,6 +391,7 @@ class VirtualRegistration(object):
             profile.src = rhnreg.registerSystem(token=self.options.key,
                                                 profileName=profile.id,
                                                 other=profile.params)
+            profile.login_info = rhnserver.RhnServer().up2date.login(profile.src)
             xmldata.load(profile.src)
             profile.sid = xmldata.get_member('system_id')
             profile.name = xmldata.get_member('profile_name')
