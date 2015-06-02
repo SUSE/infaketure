@@ -51,6 +51,9 @@ class DBStorage(object):
                                  "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
         self.init_queries.append("CREATE TABLE hardware "
                                  "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
+        self.init_queries.append("CREATE TABLE credentials "
+                                 "(HID INTEGER, S_BODY BLOB)")
+
 
     def open(self, new=False):
         """
@@ -217,7 +220,6 @@ class DBOperations(DBStorage):
                             (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
 
         # Credentials
-        self.cursor.execute("CREATE TABLE credentials (HID INTEGER, S_BODY BLOB)")
         self.cursor.execute("INSERT INTO credentials (HID, S_BODY) VALUES (?, ?)",
                             (host_id, pickle.dumps(profile.login_info, 0),))
 
