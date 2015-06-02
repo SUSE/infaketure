@@ -149,6 +149,7 @@ class DBOperations(DBStorage):
             host.src = profile
             host.hostname = hostname
             host.packages = self.get_host_packages(sid)
+            host.login_info = self.get_host_login_info(sid)
 
             data.append(host)
 
