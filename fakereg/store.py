@@ -165,7 +165,7 @@ class DBOperations(DBStorage):
         :param host_id:
         :return:
         """
-        self.cursor.execute("SELECT BODY FROM CREDENTIALS WHERE HID = ?", (host_id,))
+        self.cursor.execute("SELECT S_BODY FROM CREDENTIALS WHERE HID = ?", (host_id,))
         for nfo in self.cursor.fetchall():
             return pickle.loads(nfo[0])
 
