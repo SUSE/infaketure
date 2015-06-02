@@ -260,6 +260,10 @@ class DBOperations(DBStorage):
                     return True
             return False
 
+        # Login info credentials
+        self.cursor.execute("UPDATE credentials SET S_BODY = ? WHERE HID = ?)",
+                            (pickle.dumps(profile.login_info, 0), profile.sid,))
+
         current_packages = self.get_host_packages(profile.sid)
         # Remove packages that was uninstalled
         for pkg in current_packages:
