@@ -353,11 +353,17 @@ class VirtualRegistration(object):
         host_sids = ["ID-{0}".format(host.sid) for host in self.db.get_host_profiles()]
         # Flush hosts in SUMA
         systems = self.api.system.get_systems()
+        batch = 0
         for system in systems:
             if not wipe and system['sid'] in host_sids or wipe:
                 if self.verbose:
                     print "Removing {0} ({1})".format(system['name'], system['sid'])
                 self.procpool.run(multiprocessing.Process(target=self._flush_host_by_sid, args=(system['id'],)))
+                batch += 1
+            if batch == 30:
+                self.procpool.join()
+                print "Removed {0} machines".format(batch)
+                batch = 0
         if self.verbose and systems:
             print "Done"
 
