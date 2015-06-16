@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # GNU Plot exporter for Fakereg
 #
