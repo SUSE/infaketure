@@ -31,6 +31,7 @@ from up2date_client import up2dateErrors
 from suseRegister.info import getProductProfile as get_suse_product_profile
 from up2date_client import rhnserver
 
+VERSION = "0.1"
 
 class CMDBProfile(store.CMDBBaseProfile):
     """
