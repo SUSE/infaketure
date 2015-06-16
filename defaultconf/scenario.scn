@@ -13,7 +13,7 @@
 
 [pcp]
   # PCP-related config starts from "pcp." prefix.
-  snapshot = /tmp/fakereg
+  snapshot = /tmp/infaketure
 
 [pcp metrics]
   kernel.all.load = 1 minute
