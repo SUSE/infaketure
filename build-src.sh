@@ -1,7 +1,7 @@
 #!/bin/sh
 
-VERSION=`grep "VERSION =" fakeregks.py | sed s'/^.*"\([[:digit:]\.]\+\)"/\1/'`
-NAME="faketure"
+VERSION=`grep "VERSION =" setup.py | sed s'/^.*"\([[:digit:]\.]\+\)"/\1/'`
+NAME="infaketure"
 
 # Update
 git pull --rebase
