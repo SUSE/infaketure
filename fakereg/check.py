@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Python client for checking periodically for posted actions
 # on the Spacewalk servers.
 #
