@@ -13,11 +13,11 @@ find . | grep '~$' | xargs rm 2>/dev/null
 
 # Archive
 mkdir $NAME-$VERSION
-cp -rv fakereg $NAME-$VERSION/
+cp -rv infaketure $NAME-$VERSION/
 cp -rv defaultconf $NAME-$VERSION/
 #cp -rv doc $NAME-$VERSION/
 
-for fn in LICENSE setup.py fakeregks.py fakeregplot.py; do
+for fn in LICENSE setup.py infaketure.py infaketure-plot.py; do
   cp -v $fn $NAME-$VERSION/
 done
 
