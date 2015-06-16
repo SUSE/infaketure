@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# GNU Plot exporter for Fakereg
+# GNU Plot exporter for Infaketure
 #
 __author__ = 'BOFH <bo@suse.de>'
 
@@ -113,15 +113,15 @@ class GNUPlotExporter(object):
         return scripts
 
 if __name__ == '__main__':
-    args = OptionParser(version="Bloody Alpha, 0.1", prog='fakeregplot',
-                        description='Generate GNU Plot views from the Fakereg PCP data.')
+    args = OptionParser(version="Bloody Alpha, 0.1", prog='infaketure-plot',
+                        description='Generate GNU Plot views from the Infaketure PCP data.')
     args.add_option("-p", "--path", help="Path to the PCP snapshot", action="store")
     args.add_option("-c", "--config", help="Path to the configuration", action="store")
     if not [elm for elm in sys.argv if elm.startswith("--path")]:
         sys.argv.append("--help")
     options, args = args.parse_args()
 
-    options.config = options.config or "./fakeregplot.conf"
+    options.config = options.config or "./plot.conf"
     if not os.path.exists(options.config):
         print 'Error: cannot access "{conf}" configuration'.format(conf=options.config)
         sys.exit(1)

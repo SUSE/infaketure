@@ -14,13 +14,13 @@ import uuid
 from xml.dom import minidom as dom
 import multiprocessing
 
-from fakereg import check
-from fakereg import hostnames
-from fakereg import store
-from fakereg import spaceapi
-from fakereg import loadproc
-from fakereg.pcp import pcpconn
-from fakereg import procpool
+from infaketure import check
+from infaketure import hostnames
+from infaketure import store
+from infaketure import spaceapi
+from infaketure import loadproc
+from infaketure.pcp import pcpconn
+from infaketure import procpool
 
 sys.path.append("/usr/share/rhn/")
 
@@ -31,7 +31,6 @@ from up2date_client import up2dateErrors
 from suseRegister.info import getProductProfile as get_suse_product_profile
 from up2date_client import rhnserver
 
-VERSION = "0.1"
 
 class CMDBProfile(store.CMDBBaseProfile):
     """

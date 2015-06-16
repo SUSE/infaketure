@@ -12,8 +12,8 @@ import os
 import time
 import tempfile
 
-from fakereg import cli_msg
-from fakereg import ERROR
+from infaketure import cli_msg
+from infaketure import ERROR
 
 
 class SSHCall(object):
@@ -90,7 +90,7 @@ class PCPConnector(object):
         self._id = uuid.uuid4().hex
         self._host = config.get(self.CFG_HOST)
         self._logger_host = config.get(self.CFG_LOGGER_HOST, self._host)
-        self._snapshots = config.get(self.CFG_PATH, '/tmp/fakereg')
+        self._snapshots = config.get(self.CFG_PATH, '/tmp/infaketure')
         self.probes = config.get(self.CFG_PROBES, dict())
 
         if not self._host:

@@ -7,8 +7,8 @@ import sqlite3
 import re
 import os
 import sys
-from fakereg import cli_msg
-from fakereg import ERROR
+from infaketure import cli_msg
+from infaketure import ERROR
 import pickle
 
 try:
