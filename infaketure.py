@@ -326,7 +326,7 @@ class VirtualRegistration(object):
             fh = hostnames.FakeNames(fqdn=True)
             for profile in self.db.get_host_profiles():
                 fh.add_history(profile.hostname)
-            idx_offset = self.db.get_next_id("hosts")
+            idx_offset = self.db.get_next_id("hosts") - 1
             for idx in range(vr.amount):
                 self.procpool.run(multiprocessing.Process(target=self.register,
                                                           args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)), join=True)
