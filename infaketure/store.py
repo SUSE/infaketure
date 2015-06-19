@@ -156,6 +156,7 @@ class DBOperations(DBStorage):
             host.hostname = hostname
             host.packages = self.get_host_packages(sid)
             host.login_info = self.get_host_login_info(sid)
+            host.hardware = self.get_host_hardware(hid)
 
             data.append(host)
 
@@ -210,6 +211,17 @@ class DBOperations(DBStorage):
             })
 
         return pkgs
+
+    def get_host_hardware(self, host_id):
+        """
+        Get host hardware.
+
+        :param host_id: Internal DB id of the host (not the SID).
+        :return: Hardware description
+        """
+        self.cursor.execute("SELECT BODY FROM HARDWARE WHERE HID = ?", (host_id,))
+        hardware = self.cursor.fetchall()
+        return hardware and hardware[0][0] or None
 
     def create_profile(self, profile):
         """
