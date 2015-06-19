@@ -15,7 +15,6 @@ try:
     from up2date_client import rhnreg
 except Exception as error:
     cli_msg(ERROR, 'Package "{0}" seems not installed'.format("spacewalk-client-setup"))
-    sys.exit(1)
 
 
 class CMDBBaseProfile(object):
