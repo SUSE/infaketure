@@ -195,13 +195,13 @@ class DBOperations(DBStorage):
         self.cursor.execute("DELETE FROM CREDENTIALS WHERE HID = ?", (host.id,))
         self.cursor.execute("DROP TABLE IF EXISTS SYS{0}PKG".format(host.id))
 
-    def get_host_packages(self, host_id):
+    def get_host_packages(self, sid):
         """
         Return packages for a client.
         """
         pkgs = list()
         self.cursor.execute("SELECT ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME "
-                            "FROM {0}".format("SYS{0}PKG".format(host_id)))
+                            "FROM {0}".format("SYS{0}PKG".format(sid)))
         for db_pkg in self.cursor.fetchall():
             pkg_id, hid, name, epoch, version, release, arch, installtime = db_pkg
             pkgs.append({
