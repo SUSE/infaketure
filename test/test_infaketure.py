@@ -16,6 +16,7 @@ import shutil
 sys.path.append("../")
 
 from infaketure import store
+from infaketure.store import CMDBBaseProfile
 
 
 class TestSQLiteHandler(unittest.TestCase):
@@ -96,6 +97,64 @@ class TestSQLiteHandler(unittest.TestCase):
         self.db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         self.assertEqual(sorted([tbl_name[0] for tbl_name in self.db.cursor.fetchall()]),
                          ['configs', 'credentials', 'hardware', 'hosts'])
+
+    def test_next_id(self):
+        """
+        Get next ID from the DB.
+
+        :return:
+        """
+        next_id = self.db.get_next_id("hosts")
+        self.assertEqual(next_id, 1)
+        self.db.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
+                               (next_id, "-", "-", "-",))
+
+        next_id = self.db.get_next_id("hosts")
+        self.assertEqual(next_id, 2)
+        self.db.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
+                               (next_id, "-", "-", "-",))
+
+        next_id = self.db.get_next_id("hosts")
+        self.assertEqual(next_id, 3)
+        self.db.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
+                               (next_id, "-", "-", "-",))
+
+    def test_profile_create(self):
+        """
+        Test profile create
+
+        :return:
+        """
+        # Fake profile
+        profile = type('profile', (), {})
+        profile.sid = "10001000"
+        profile.src = "src"
+        profile.name = "name"
+        profile.hardware = "hardware"
+        profile.login_info = {'login': 'info'}
+        profile.packages = list()
+
+        # Fake rhnreg module
+        rhnreg = type('rhnreg', (), {})
+        rhnreg.cfg = {'cfg': 'test'}
+        store.rhnreg = rhnreg
+
+        self.db.create_profile(profile)
+        self.db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        self.assertEqual(sorted([tbl_name[0] for tbl_name in self.db.cursor.fetchall()]),
+                         ['SYS10001000PKG', 'configs', 'credentials', 'hardware', 'hosts'])
+
+        profiles = self.db.get_host_profiles()
+        self.assertEqual(len(profiles), 1)
+        self.assertTrue(isinstance(profiles[0], CMDBBaseProfile))
+
+        cmdb_profile = profiles[0]
+        self.assertEqual(cmdb_profile.sid, profile.sid)
+        self.assertEqual(cmdb_profile.src, profile.src)
+        self.assertEqual(cmdb_profile.name, profile.name)
+        self.assertEqual(cmdb_profile.hardware, profile.hardware)
+        self.assertEqual(cmdb_profile.login_info, profile.login_info)
+        self.assertEqual(cmdb_profile.packages, profile.packages)
 
 
 if __name__ == '__main__':
