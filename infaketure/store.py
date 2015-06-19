@@ -154,6 +154,7 @@ class DBOperations(DBStorage):
             host.sid = sid
             host.src = profile
             host.hostname = hostname
+            host.name = host.hostname
             host.packages = self.get_host_packages(sid)
             host.login_info = self.get_host_login_info(sid)
             host.hardware = self.get_host_hardware(hid)
