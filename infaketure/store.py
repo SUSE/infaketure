@@ -124,6 +124,14 @@ class DBStorage(object):
             self.connection.close()
             self.cursor = self.connection = None
 
+    def is_closed(self):
+        """
+        Check if the SQLite connection is opened.
+
+        :return: True, if database is opened
+        """
+        return self.cursor and self.connection
+
 
 class DBOperations(DBStorage):
     """
