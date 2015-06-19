@@ -53,7 +53,6 @@ class DBStorage(object):
         self.init_queries.append("CREATE TABLE credentials "
                                  "(HID INTEGER, S_BODY BLOB)")
 
-
     def open(self, new=False):
         """
         Init the database, if required.
