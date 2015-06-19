@@ -30,6 +30,7 @@ class TestSQLiteHandler(unittest.TestCase):
         self._db_file = os.path.join(self._db_location,
                                      ''.join(map(lambda elm: rnd.choice(string.ascii_letters), range(10))))
         self.db = store.DBOperations(self._db_file)
+        self.db.open()
 
     def tearDown(self):
         """
@@ -37,6 +38,7 @@ class TestSQLiteHandler(unittest.TestCase):
 
         :return: void
         """
+        self.db.close()
         shutil.rmtree(self._db_location)
 
     def test_init(self):
@@ -45,7 +47,6 @@ class TestSQLiteHandler(unittest.TestCase):
 
         :return: void
         """
-        self.db.open()
         self.db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         self.assertEqual(sorted([tbl_name[0] for tbl_name in self.db.cursor.fetchall()]),
                          ['configs', 'credentials', 'hardware', 'hosts'])
@@ -56,7 +57,6 @@ class TestSQLiteHandler(unittest.TestCase):
 
         :return: void
         """
-        self.db.open()
         self.assertTrue(self.db.is_closed())
         self.db.close()
         self.assertFalse(self.db.is_closed())
@@ -67,7 +67,6 @@ class TestSQLiteHandler(unittest.TestCase):
 
         :return: void
         """
-        self.db.open()
         self.db.cursor.execute("SELECT HID FROM CREDENTIALS")
         self.assertEqual(0, len(self.db.cursor.fetchall()))
 
@@ -87,7 +86,6 @@ class TestSQLiteHandler(unittest.TestCase):
 
         :return: void
         """
-        self.db.open()
         self.db.cursor.execute("CREATE TABLE dummy (id INTEGER, TEST CHAR(255))")
         self.db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         self.assertEqual(sorted([tbl_name[0] for tbl_name in self.db.cursor.fetchall()]),
@@ -98,7 +96,6 @@ class TestSQLiteHandler(unittest.TestCase):
         self.db.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         self.assertEqual(sorted([tbl_name[0] for tbl_name in self.db.cursor.fetchall()]),
                          ['configs', 'credentials', 'hardware', 'hosts'])
-        self.db.close()
 
 
 if __name__ == '__main__':
