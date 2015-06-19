@@ -99,7 +99,7 @@ class DBStorage(object):
         """
         self.cursor.execute("SELECT max({0}) FROM {1}".format(field, table))
         data = self.cursor.fetchall()
-        return data and data[0][0] or 0
+        return (data and data[0][0] or 0) + 1
 
     def flush(self, table):
         """
@@ -216,13 +216,13 @@ class DBOperations(DBStorage):
         Create profile for the system.
         If exists, remove previous.
         """
-        host_id = self.get_next_id("hosts") + 1
+        host_id = self.get_next_id("hosts")
         self.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
                             (host_id, profile.sid, profile.name, profile.src,))
-        hardware_id = self.get_next_id("hardware") + 1
+        hardware_id = self.get_next_id("hardware")
         self.cursor.execute("INSERT INTO hardware (ID, HID, BODY) VALUES (?, ?, ?)",
                             (hardware_id, host_id, str(profile.hardware),))
-        cfg_id = self.get_next_id("configs") + 1
+        cfg_id = self.get_next_id("configs")
         self.cursor.execute("INSERT INTO configs (ID, HID, BODY) VALUES (?, ?, ?)",
                             (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
 
@@ -284,7 +284,7 @@ class DBOperations(DBStorage):
         for pkg in profile.packages:
             if not _in(pkg, current_packages):
                 # print "ADD:", pkg["name"]
-                idx = self.get_next_id(pkg_table) + 1
+                idx = self.get_next_id(pkg_table)
                 self.cursor.execute("INSERT INTO {0} (ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME) "
                                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)".format(pkg_table),
                                     (idx, 0, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
