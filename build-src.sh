@@ -3,6 +3,8 @@
 VERSION=`grep "VERSION =" setup.py | sed s'/^.*"\([[:digit:]\.]\+\)"/\1/'`
 NAME="infaketure"
 
+cd src
+
 # Update
 git pull --rebase
 
