@@ -1,6 +1,6 @@
 __author__ = "bo"
 
-VERSION = "0.1"
+VERSION = "0.2"
 try:
     from setuptools import setup
 except ImportError:

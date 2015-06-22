@@ -23,8 +23,8 @@
 %endif
 
 Name:           infaketure
-Version:        0.1
-Release:        0
+Version:        0.2
+Release:        1
 Summary:        Tool to generate a load for installed SUSE Manager instance
 
 Group:          Productivity/Databases/Tools
