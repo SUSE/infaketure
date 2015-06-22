@@ -5,7 +5,7 @@ python:
   - "3.4"
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install pylint
+  - sudo apt-get install pep8
 script:
-  - pylint --rcfile=.pylintrc infaketure
+  - pep8 infaketure
   - PYTHONPATH=$PWD python test/test_infaketure.py
