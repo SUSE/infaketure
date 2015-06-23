@@ -309,10 +309,10 @@ class CheckCli(rhncli.RhnCli):
                 break
 
         retry_server = rpcServer.RetryServer(server_list.server(),
-            refreshCallback=refreshCallback,
-            proxy=proxy_host,
-            username=proxy_user,
-            password=proxy_password)
+                                             refreshCallback=refreshCallback,
+                                             proxy=proxy_host,
+                                             username=proxy_user,
+                                             password=proxy_password)
         retry_server.addServerList(server_list)
         retry_server.add_header("X-Up2date-Version", up2dateUtils.version())
 
