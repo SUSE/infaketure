@@ -39,7 +39,6 @@ class FakeNames(object):
                 continue
             self._crack_dict.append(line)
 
-
     def add_history(self, hostname):
         """
         Add hostname to the history.
@@ -62,7 +61,6 @@ class FakeNames(object):
                 else:
                     posts.append(word)
         return prefs[random.randint(0, len(prefs) - 1)], posts[random.randint(0, len(posts) - 1)]
-
 
     def __call__(self, *args, **kwargs):
         """
