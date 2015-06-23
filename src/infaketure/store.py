@@ -15,7 +15,6 @@ try:
     from up2date_client import rhnreg
 except Exception as error:
     cli_msg(ERROR, 'Package "{0}" seems not installed'.format("spacewalk-client-setup"))
-    sys.exit(1)
 
 
 class CMDBBaseProfile(object):
@@ -53,7 +52,6 @@ class DBStorage(object):
                                  "(id INTEGER PRIMARY KEY, hid INTEGER, BODY BLOB)")
         self.init_queries.append("CREATE TABLE credentials "
                                  "(HID INTEGER, S_BODY BLOB)")
-
 
     def open(self, new=False):
         """
@@ -101,7 +99,7 @@ class DBStorage(object):
         """
         self.cursor.execute("SELECT max({0}) FROM {1}".format(field, table))
         data = self.cursor.fetchall()
-        return data and data[0][0] or 0
+        return (data and data[0][0] or 0) + 1
 
     def flush(self, table):
         """
@@ -126,6 +124,14 @@ class DBStorage(object):
             self.connection.close()
             self.cursor = self.connection = None
 
+    def is_closed(self):
+        """
+        Check if the SQLite connection is opened.
+
+        :return: True, if database is opened
+        """
+        return self.cursor and self.connection
+
 
 class DBOperations(DBStorage):
     """
@@ -148,8 +154,10 @@ class DBOperations(DBStorage):
             host.sid = sid
             host.src = profile
             host.hostname = hostname
+            host.name = host.hostname
             host.packages = self.get_host_packages(sid)
-            host.login_info = self.get_host_login_info(sid)
+            host.login_info = self.get_host_login_info(hid)
+            host.hardware = self.get_host_hardware(hid)
 
             data.append(host)
 
@@ -187,13 +195,13 @@ class DBOperations(DBStorage):
         self.cursor.execute("DELETE FROM CREDENTIALS WHERE HID = ?", (host.id,))
         self.cursor.execute("DROP TABLE IF EXISTS SYS{0}PKG".format(host.id))
 
-    def get_host_packages(self, host_id):
+    def get_host_packages(self, sid):
         """
         Return packages for a client.
         """
         pkgs = list()
         self.cursor.execute("SELECT ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME "
-                            "FROM {0}".format("SYS{0}PKG".format(host_id)))
+                            "FROM {0}".format("SYS{0}PKG".format(sid)))
         for db_pkg in self.cursor.fetchall():
             pkg_id, hid, name, epoch, version, release, arch, installtime = db_pkg
             pkgs.append({
@@ -205,18 +213,29 @@ class DBOperations(DBStorage):
 
         return pkgs
 
+    def get_host_hardware(self, host_id):
+        """
+        Get host hardware.
+
+        :param host_id: Internal DB id of the host (not the SID).
+        :return: Hardware description
+        """
+        self.cursor.execute("SELECT BODY FROM HARDWARE WHERE HID = ?", (host_id,))
+        hardware = self.cursor.fetchall()
+        return hardware and hardware[0][0] or None
+
     def create_profile(self, profile):
         """
         Create profile for the system.
         If exists, remove previous.
         """
-        host_id = self.get_next_id("hosts") + 1
+        host_id = self.get_next_id("hosts")
         self.cursor.execute("INSERT INTO hosts (ID, SID, HOSTNAME, SID_XML) VALUES (?, ?, ?, ?)",
                             (host_id, profile.sid, profile.name, profile.src,))
-        hardware_id = self.get_next_id("hardware") + 1
+        hardware_id = self.get_next_id("hardware")
         self.cursor.execute("INSERT INTO hardware (ID, HID, BODY) VALUES (?, ?, ?)",
                             (hardware_id, host_id, str(profile.hardware),))
-        cfg_id = self.get_next_id("configs") + 1
+        cfg_id = self.get_next_id("configs")
         self.cursor.execute("INSERT INTO configs (ID, HID, BODY) VALUES (?, ?, ?)",
                             (cfg_id, host_id, str(dict(rhnreg.cfg.items()))))
 
@@ -278,7 +297,7 @@ class DBOperations(DBStorage):
         for pkg in profile.packages:
             if not _in(pkg, current_packages):
                 # print "ADD:", pkg["name"]
-                idx = self.get_next_id(pkg_table) + 1
+                idx = self.get_next_id(pkg_table)
                 self.cursor.execute("INSERT INTO {0} (ID, HID, NAME, EPOCH, VERSION, RELEASE, ARCH, INSTALLTIME) "
                                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)".format(pkg_table),
                                     (idx, 0, pkg.get("name", ""), pkg.get("epoch", ""), pkg.get("version", ""),
@@ -287,6 +306,6 @@ class DBOperations(DBStorage):
         # Update packages that were changed
         for pkg in profile.packages:
             if _diff(pkg, _in(pkg, current_packages) or {}, "epoch", "version", "release", "arch"):
-                # print "UPDATE:", pkg["name"]
-                self.cursor.execute("UPDATE {0} SET EPOCH = ?, VERSION = ?, RELEASE = ?, ARCH = ? WHERE NAME = ?".format(pkg_table),
+                self.cursor.execute("UPDATE {0} SET EPOCH = ?, VERSION = ?, "
+                                    "RELEASE = ?, ARCH = ? WHERE NAME = ?".format(pkg_table),
                                     (pkg["epoch"], pkg["version"], pkg["release"], pkg["arch"], pkg["name"]))

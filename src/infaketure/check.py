@@ -124,7 +124,7 @@ class CheckCli(rhncli.RhnCli):
 
     def __check_future_actions(self):
         """ Retrieve scheduled actions and cache them if possible """
-        time_window = self.cfg['stagingContentWindow'] or 24;
+        time_window = self.cfg['stagingContentWindow'] or 24
         actions = self.__query_future_actions(time_window)
         for action in actions:
             self.handle_action(action, cache_only=1)
@@ -204,11 +204,11 @@ class CheckCli(rhncli.RhnCli):
         log.log_debug("check_action", action)
 
         # be very paranoid of what we get back
-        if type(action) != type({}) and self.verbose:
+        if isinstance(action, dict) and self.verbose:
             print "Got unparseable action response from server"
 
         for key in ['id', 'version', 'action']:
-            if not action.has_key(key) and self.verbose:
+            if key not in action and self.verbose:
                 print "Got invalid response - missing '%s'" % key
         try:
             ver = int(action['version'])
@@ -300,19 +300,17 @@ class CheckCli(rhncli.RhnCli):
 
         lang = None
         for env in 'LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG':
-            if os.environ.has_key(env):
-                if not os.environ[env]:
-                    # sometimes unset
-                    continue
-                lang = os.environ[env].split(':')[0]
-                lang = lang.split('.')[0]
+            if os.environ.get(env):
+                lang = os.environ[env].split(':')[0].split('.')[0]
                 break
+            else:
+                continue
 
         retry_server = rpcServer.RetryServer(server_list.server(),
-            refreshCallback=refreshCallback,
-            proxy=proxy_host,
-            username=proxy_user,
-            password=proxy_password)
+                                             refreshCallback=refreshCallback,
+                                             proxy=proxy_host,
+                                             username=proxy_user,
+                                             password=proxy_password)
         retry_server.addServerList(server_list)
         retry_server.add_header("X-Up2date-Version", up2dateUtils.version())
 
