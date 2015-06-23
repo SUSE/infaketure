@@ -306,6 +306,6 @@ class DBOperations(DBStorage):
         # Update packages that were changed
         for pkg in profile.packages:
             if _diff(pkg, _in(pkg, current_packages) or {}, "epoch", "version", "release", "arch"):
-                # print "UPDATE:", pkg["name"]
-                self.cursor.execute("UPDATE {0} SET EPOCH = ?, VERSION = ?, RELEASE = ?, ARCH = ? WHERE NAME = ?".format(pkg_table),
+                self.cursor.execute("UPDATE {0} SET EPOCH = ?, VERSION = ?, "
+                                    "RELEASE = ?, ARCH = ? WHERE NAME = ?".format(pkg_table),
                                     (pkg["epoch"], pkg["version"], pkg["release"], pkg["arch"], pkg["name"]))
