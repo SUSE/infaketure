@@ -10,7 +10,6 @@ install:
 env:
   - SRC_DIR=$PWD/src
   - TEST_DIR=$SRC_DIR/test
-  - PYTHONPATH=$PYTHONPATH:$PWD:$SRC_DIR
 script:
-  - "cd $SRC_DIR; pep8 --max-line-length=120 --ignore=E402 --show-source infaketure && echo 'PEP8 is clean'"
-  - "cd $TEST_DIR; python test_infaketure.py"
+  - cd $SRC_DIR; pep8 --max-line-length=120 --ignore=E402 --show-source infaketure && echo 'PEP8 is clean'
+  - PYTHONPATH=$PWD/src/ python $PWD/src/test/test_infaketure.py
