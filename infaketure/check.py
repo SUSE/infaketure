@@ -204,7 +204,7 @@ class CheckCli(rhncli.RhnCli):
         log.log_debug("check_action", action)
 
         # be very paranoid of what we get back
-        if type(action) != type({}) and self.verbose:
+        if isinstance(action, dict) and self.verbose:
             print "Got unparseable action response from server"
 
         for key in ['id', 'version', 'action']:
