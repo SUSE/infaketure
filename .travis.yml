@@ -7,5 +7,5 @@ before_install:
 install:
   - pip install pep8 --use-mirrors
 script:
-  - pep8 --max-line-length=120 --ignore=E402 --show-source infaketure && echo 'PEP8 is clean'
+  - cd $PWD/src; pep8 --max-line-length=120 --ignore=E402 --show-source infaketure && echo 'PEP8 is clean'
   - PYTHONPATH=$PWD python $PWD/test/test_infaketure.py
