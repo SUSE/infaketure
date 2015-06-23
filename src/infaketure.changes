@@ -1,0 +1,21 @@
+-------------------------------------------------------------------
+Mon Jun 22 10:39:16 CEST 2015 - None
+
+- version 0.2-1
+- Introduce tito
+
+-------------------------------------------------------------------
+Tue Jun 16 12:56:05 UTC 2015 - bmaryniuk@suse.com
+
+- Renamed to "infaketure": Fake Infrastructure 
+
+-------------------------------------------------------------------
+Tue Jun 16 12:28:53 UTC 2015 - bmaryniuk@suse.com
+
+- Added rpmrclint
+
+-------------------------------------------------------------------
+Tue Jun 16 12:17:21 UTC 2015 - bmaryniuk@suse.com
+
+- Initial package
+
