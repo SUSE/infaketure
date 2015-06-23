@@ -124,7 +124,7 @@ class CheckCli(rhncli.RhnCli):
 
     def __check_future_actions(self):
         """ Retrieve scheduled actions and cache them if possible """
-        time_window = self.cfg['stagingContentWindow'] or 24;
+        time_window = self.cfg['stagingContentWindow'] or 24
         actions = self.__query_future_actions(time_window)
         for action in actions:
             self.handle_action(action, cache_only=1)
