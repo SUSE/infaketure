@@ -7,5 +7,5 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install pep8
 script:
-  - pep8 infaketure
+  - pep8 --show-source infaketure
   - PYTHONPATH=$PWD python test/test_infaketure.py
