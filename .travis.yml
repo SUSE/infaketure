@@ -2,14 +2,10 @@ language: python
 python:
   - "2.6"
   - "2.7"
-  - "3.4"
 before_install:
   - sudo apt-get update -qq
 install:
   - pip install pep8 --use-mirrors
-env:
-  - SRC_DIR=$PWD/src
-  - TEST_DIR=$SRC_DIR/test
 script:
-  - cd $SRC_DIR; pep8 --max-line-length=120 --ignore=E402 --show-source infaketure && echo 'PEP8 is clean'
+  - pep8 --max-line-length=120 --ignore=E402 --show-source infaketure && echo 'PEP8 is clean'
   - PYTHONPATH=$PWD python $PWD/test/test_infaketure.py
