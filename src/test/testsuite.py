@@ -35,10 +35,12 @@ def main():
 
     from tests.test_actions import TestActions
     from tests.test_sqlite import TestSQLiteHandler
+    from tests.test_scenario_loader import TestScenarioLoader
 
     unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite([
         unittest.TestLoader().loadTestsFromTestCase(TestSQLiteHandler),
         unittest.TestLoader().loadTestsFromTestCase(TestActions),
+        unittest.TestLoader().loadTestsFromTestCase(TestScenarioLoader),
     ]))
 
 if __name__ == "__main__":
