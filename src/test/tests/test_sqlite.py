@@ -8,7 +8,6 @@ import tempfile
 import random
 import string
 import os
-import sys
 import shutil
 
 from infaketure import store
