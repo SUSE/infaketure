@@ -1,7 +1,5 @@
-#!/usr/bin/python
-#
 """
-Main unittest runner.
+SQLite tests
 """
 __author__ = 'bo'
 
@@ -10,10 +8,7 @@ import tempfile
 import random
 import string
 import os
-import sys
 import shutil
-
-sys.path.append("../")
 
 from infaketure import store
 from infaketure.store import CMDBBaseProfile
@@ -155,7 +150,3 @@ class TestSQLiteHandler(unittest.TestCase):
         self.assertEqual(cmdb_profile.hardware, profile.hardware)
         self.assertEqual(cmdb_profile.login_info, profile.login_info)
         self.assertEqual(cmdb_profile.packages, profile.packages)
-
-
-if __name__ == '__main__':
-    unittest.main()

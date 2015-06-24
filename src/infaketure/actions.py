@@ -65,7 +65,6 @@ class Dispatcher(object):
         action.errata = Action()
         action.distupgrade = Action()
         action.configfiles = Action()
-        action.hoo = Action(foobar=lambda *a, **k: (2, "Foo",))
 
         return action
 
