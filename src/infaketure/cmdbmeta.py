@@ -48,8 +48,12 @@ class SoftwareInfo(object):
         :return:
         """
         installed = dict()
-        for pkg_info in self._caller.call("/bin/rpm -qa --queryformat='%{NAME}\t%{VERSION}\t%{RELEASE}\t%{VENDOR}\n'",
-                                          ignore_failure=True)[0].split(os.linesep):
+        pkgs_meta, status = self._caller.call(
+            "/bin/rpm -qa --queryformat='%{NAME}\t%{VERSION}\t%{RELEASE}\t%{VENDOR}\n'")
+        if status:
+            raise Exception(pkgs_meta)
+
+        for pkg_info in pkgs_meta.strip().split(os.linesep):
             name, version, release, vendor = pkg_info.split("\t")
             installed[name] = {"version": version, "release": release, "vendor": vendor}
 
