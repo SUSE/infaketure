@@ -34,6 +34,9 @@ class HardwareInfo(object):
 
 
 class SoftwareInfo(object):
+    """
+    Get installed software information
+    """
     def __init__(self, host, user=None):
         if host is None or host.lower().strip() == 'localhost':
             self._caller = LocalCaller()
