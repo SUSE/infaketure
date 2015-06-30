@@ -11,7 +11,7 @@ class SSHCall(object):
     """
     Dead-simple SSH wrapper.
     """
-    SSH_CMD = 'ssh -oStrictHostKeyChecking=no -oBatchMode=yes {user}@{host} {command}'
+    SSH_CMD = 'ssh -oStrictHostKeyChecking=no -oBatchMode=yes {user}@{host} "{command}"'
     SCP_TO_CMD = 'scp {src_path} {user}@{host}:{dest_path}'
     SCP_FROM_CMD = 'scp {user}@{host}:{src_path} {dest_path}'
 
