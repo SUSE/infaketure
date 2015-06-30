@@ -26,16 +26,9 @@ class LocalCaller(object):
         return (out or err or '').strip(), ignore_failure is False and status or 0
 
 
-class HardwareInfo(object):
+class MachineInfo(object):
     """
-    Get hardware info of the target machine.
-    """
-    pass
-
-
-class SoftwareInfo(object):
-    """
-    Get installed software information
+    Base class for machine information extraction.
     """
     def __init__(self, host, user=None):
         if host is None or host.lower().strip() == 'localhost':
@@ -43,6 +36,50 @@ class SoftwareInfo(object):
         else:
             self._caller = SSHCall(user or getpass.getuser(), host)
 
+
+class HardwareInfo(MachineInfo):
+    """
+    Get hardware info of the target machine.
+    """
+    def get_disk_drives(self):
+        """
+        Get disk drives
+        """
+        devices = list()
+        for mounted_device in self._call("cat /etc/mtab").strip().split("\n"):
+            if mounted_device.startswith('/dev/'):
+                devices.append(self._call("hdparm -i {0}".format(mounted_device.split(" ")[0])))
+
+    def _call(self, cmd):
+        nfo, status = self._caller.call(cmd)
+        if status:
+            raise Exception(nfo)
+
+        return nfo
+
+    def get_memory(self):
+        """
+        Get general memory info
+        """
+        return self._call("cat /proc/meminfo")
+
+    def get_cpu(self):
+        """
+        Get CPU info
+        """
+        return self._call("cat /proc/cpuinfo")
+
+    def get_disk_space(self):
+        """
+        Get disk space
+        """
+        return self._call("df -h")
+
+
+class SoftwareInfo(MachineInfo):
+    """
+    Get installed software information
+    """
     def get_pkg_info(self, *packages):
         """
         Get the information about given packages.
