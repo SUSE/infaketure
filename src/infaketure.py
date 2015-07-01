@@ -293,11 +293,33 @@ class Infaketure(object):
         Save CMDB metadata of the tester client host and the tested SUMA installation.
         """
         conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, "conf")
-        os.makedirs(conf_path)
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
 
-        # Get tester
-        SoftwareInfo('localhost',).get_pkg_info('python*')
+        # Get software
+        for doc_file, sft_pks in (('client-software.txt', SoftwareInfo('localhost').get_pkg_info('python-*')),
+                                 ('server-software.txt', SoftwareInfo(self.options.fqdn, user=getpass.getuser())
+                                     .get_pkg_info('postgres*', 'java*'))):
+            doc_file = open(os.path.join(conf_path, doc_file), 'w')
+            for pkg_name in sorted(sft_pks.keys()):
+                doc_file.write("{name}:\n  Vendor:  \"{vendor}\"\n".format(
+                    name=pkg_name, vendor=sft_pks.get(pkg_name).get('vendor')))
+                doc_file.write("  Version: {version}\n  Release: {release}\n\n".format(
+                    version=sft_pks.get(pkg_name).get('version'),
+                    release=sft_pks.get(pkg_name).get('release')))
+            doc_file.close()
 
+        # Get hardware
+        for doc_file, hw_nfo in (('client-hardware.txt', HardwareInfo('localhost')),
+                                 ('server-hardware.txt', HardwareInfo(self.options.fqdn, user=getpass.getuser()))):
+            doc_file = open(os.path.join(conf_path, doc_file), 'w')
+            doc_file.write("CPU\n===\n\n{cpu}\n\n\nMemory\n======\n\n{memory}\n\n\n"
+                           "Disks\n=====\n\n{disks}\n\n\nDisk Space\n==========\n\n"
+                           "{dsp}\n\n\n".format(cpu=hw_nfo.get_cpu(),
+                                                memory=hw_nfo.get_memory(),
+                                                disks=hw_nfo.get_disk_drives(),
+                                                dsp=hw_nfo.get_disk_space()))
+            doc_file.close()
 
     def _save_pcp_metrics(self, pcp):
         """
@@ -306,7 +328,8 @@ class Infaketure(object):
         metrics_path = os.path.join(self._pcp_metrics_path,
                                     self.options.fqdn,
                                     time.strftime("%Y%m%d-%H%M%S", time.localtime()))
-        os.makedirs(metrics_path)
+        if not os.path.exists(metrics_path):
+            os.makedirs(metrics_path)
         for probe in sorted(pcp.probes.keys()):
             metrics = pcp.get_metrics(probe)
 
@@ -329,6 +352,9 @@ class Infaketure(object):
         """
         Main
         """
+        self._save_cmdb_metadata()
+        sys.exit()
+
         if self.options.scenario:
             self.scenario()
         elif self.options.refresh:
