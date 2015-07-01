@@ -50,6 +50,8 @@ class HardwareInfo(MachineInfo):
             if mounted_device.startswith('/dev/'):
                 devices.append(self._call("hdparm -i {0}".format(mounted_device.split(" ")[0])))
 
+        return os.linesep.join(devices)
+
     def _call(self, cmd):
         nfo, status = self._caller.call(cmd)
         if status:
