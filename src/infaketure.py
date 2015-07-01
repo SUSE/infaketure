@@ -286,6 +286,7 @@ class Infaketure(object):
         runner.run(callback=self.refresh)
         _pcp.stop()
         self._save_pcp_metrics(_pcp)
+        self._save_cmdb_metadata()
         _pcp.cleanup()
 
     def _save_cmdb_metadata(self):
@@ -352,9 +353,6 @@ class Infaketure(object):
         """
         Main
         """
-        self._save_cmdb_metadata()
-        sys.exit()
-
         if self.options.scenario:
             self.scenario()
         elif self.options.refresh:
