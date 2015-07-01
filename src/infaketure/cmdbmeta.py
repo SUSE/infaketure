@@ -99,7 +99,12 @@ class SoftwareInfo(MachineInfo):
 
         data = dict()
         for pkg_name in packages:
-            if pkg_name in installed:
-                data[pkg_name] = installed.get(pkg_name)
+            for i_pkg_name in installed.keys():
+                if (pkg_name.startswith('*') and i_pkg_name.endswith(pkg_name.replace('*', ''))) \
+                        or (pkg_name.endswith('*') and i_pkg_name.startswith(pkg_name.replace('*', ''))) \
+                        or (pkg_name.startswith('*') and pkg_name.endswith('*') and
+                            i_pkg_name.find(pkg_name.replace('*', '')) > 0) \
+                        or (pkg_name == i_pkg_name):
+                    data[i_pkg_name] = installed.get(i_pkg_name)
 
         return data
