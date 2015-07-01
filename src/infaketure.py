@@ -21,6 +21,8 @@ from infaketure import spaceapi
 from infaketure import loadproc
 from infaketure.pcp import pcpconn
 from infaketure import procpool
+from infaketure.cmdbmeta import HardwareInfo
+from infaketure.cmdbmeta import SoftwareInfo
 
 sys.path.append("/usr/share/rhn/")
 
@@ -137,7 +139,7 @@ class XMLData(object):
         return str(self.members.get(name)) or 'N/A'
 
 
-class VirtualRegistration(object):
+class Infaketure(object):
     """
     Virtual registration.
     """
@@ -229,13 +231,13 @@ class VirtualRegistration(object):
         if self.options.cacert:
             rhnreg.cfg.set("sslCACert", self.options.cacert)
         if not os.path.exists(rhnreg.cfg["sslCACert"]):
-            raise VirtualRegistration.VRException(
+            raise Infaketure.VRException(
                 "SSL CA Certificate was not found at {0}".format(rhnreg.cfg["sslCACert"]))
 
         try:
             self.amount = int(self.options.amount and self.options.amount or "5")
         except Exception as error:
-            raise VirtualRegistration.VRException("Wrong amount of fake hosts: {0}".format(self.options.amount))
+            raise Infaketure.VRException("Wrong amount of fake hosts: {0}".format(self.options.amount))
 
         if self.options.dbfile:
             _dbstore_file = self.options.dbfile
@@ -248,7 +250,7 @@ class VirtualRegistration(object):
 
         if self.options.flush:
             if not self.options.user or not self.options.password:
-                raise VirtualRegistration.VRException(
+                raise Infaketure.VRException(
                     "User and/or password must be given to authorise against SUSE Manager.")
 
         self.db = store.DBOperations(_dbstore_file)
@@ -285,6 +287,17 @@ class VirtualRegistration(object):
         _pcp.stop()
         self._save_pcp_metrics(_pcp)
         _pcp.cleanup()
+
+    def _save_cmdb_metadata(self):
+        """
+        Save CMDB metadata of the tester client host and the tested SUMA installation.
+        """
+        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, "conf")
+        os.makedirs(conf_path)
+
+        # Get tester
+        SoftwareInfo('localhost',).get_pkg_info('python*')
+
 
     def _save_pcp_metrics(self, pcp):
         """
@@ -416,9 +429,9 @@ class VirtualRegistration(object):
 
 if __name__ == '__main__':
     try:
-        vr = VirtualRegistration()
+        vr = Infaketure()
         vr.main()
-    except VirtualRegistration.VRException as ex:
+    except Infaketure.VRException as ex:
         print "Error:\n  {0}\n".format(ex)
     except Exception as ex:
         raise ex
