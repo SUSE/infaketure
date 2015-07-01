@@ -298,8 +298,8 @@ class Infaketure(object):
 
         # Get software
         for doc_file, sft_pks in (('client-software.txt', SoftwareInfo('localhost').get_pkg_info('python-*')),
-                                 ('server-software.txt', SoftwareInfo(self.options.fqdn, user=getpass.getuser())
-                                     .get_pkg_info('postgres*', 'java*'))):
+                                  ('server-software.txt', SoftwareInfo(self.options.fqdn, user=getpass.getuser())
+                                      .get_pkg_info('postgres*', 'java*'))):
             doc_file = open(os.path.join(conf_path, doc_file), 'w')
             for pkg_name in sorted(sft_pks.keys()):
                 doc_file.write("{name}:\n  Vendor:  \"{vendor}\"\n".format(
