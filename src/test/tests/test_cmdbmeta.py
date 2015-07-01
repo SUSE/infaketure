@@ -63,3 +63,13 @@ class TestCMDBMeta(unittest.TestCase):
             self.assertEqual(version, descr_pkgs.get(name).get('version'))
             self.assertEqual(release, descr_pkgs.get(name).get('release'))
             self.assertEqual(vendor, descr_pkgs.get(name).get('vendor'))
+
+    def test_package_info_wildcards(self):
+        """
+        Test for package matching with the wildcards
+
+        :return:
+        """
+        descr_pkgs = self.softinfo.get_pkg_info('kernel*', '*ODBC', '*apache*', 'libxmi0')
+        for pkg_name in ['ant-apache-oro', 'unixODBC', 'libxmi0', 'kernel-syms']:
+            self.assertTrue(pkg_name in descr_pkgs)
