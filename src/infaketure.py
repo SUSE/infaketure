@@ -15,6 +15,7 @@ import uuid
 from xml.dom import minidom as dom
 import multiprocessing
 import shutil
+import difflib
 
 from infaketure import check
 from infaketure import hostnames
@@ -158,11 +159,11 @@ class Infaketure(object):
         self.procpool = procpool.Pool()
         self.verbose = False
         self._pcp_metrics_path = None
-        self._initialize()
 
-        self.api = spaceapi.SpaceAPI("http://{0}/rpc/api".format(self.options.fqdn))
-        rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(self.options.fqdn))
-        rhnreg.getCaps()
+        if self._initialize():
+            self.api = spaceapi.SpaceAPI("http://{0}/rpc/api".format(self.options.fqdn))
+            rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(self.options.fqdn))
+            rhnreg.getCaps()
 
         def _getProductProfile():
             '''
@@ -199,7 +200,7 @@ class Infaketure(object):
                        help="Specify a base name for a fake hosts, so it will go incrementally, "
                             "like FAKE0, FAKE1 ... . By default random host names if cracklib is installed "
                             "or 'test' as base name.")
-        opt.add_option("-d", "--database-file", action="store", dest="dbfile",
+        opt.add_option("-e", "--database-file", action="store", dest="dbfile",
                        help="Specify a path to SQLite3 database. "
                             "Default is '{0}'.".format(_dbstore_file))
         opt.add_option("-t", "--pcp-metrics", action="store", dest="pcp_path",
@@ -217,8 +218,13 @@ class Infaketure(object):
                        help="User ID for the administrator.")
         opt.add_option("-p", "--password", action="store", dest="password",
                        help="Password for the administrator.")
+        opt.add_option("-d", "--diff", action="store", dest="diff",
+                       help="Diff between a two paths of saved sessions.")
 
         self.options, self.args = opt.parse_args()
+
+        if self.options.diff:
+            return False
 
         # Check the required parameters
         if not self.options.fqdn or ((not self.options.refresh
@@ -257,6 +263,8 @@ class Infaketure(object):
 
         self.db = store.DBOperations(_dbstore_file)
         self.db.open()
+
+        return True
 
     def scenario(self):
         """
@@ -393,11 +401,39 @@ class Infaketure(object):
 
         return session_id
 
+    def diff(self, session_1, session_2):
+        """
+        Display full diff between two sessions.
+        """
+        session_1 = os.path.join(session_1, "conf")
+        session_2 = os.path.join(session_2, "conf")
+        if not os.path.exists(session_1) or not os.path.exists(session_2):
+            raise Infaketure.VRException("Sessions cannot be found. Please make sure both paths are correct")
+
+        conf_map = (
+            ('Client Hardware', 'client-hardware.txt'),
+            ('Client Software', 'client-software.txt'),
+            ('Server Hardware', 'server-hardware.txt'),
+            ('Server Software', 'server-software.txt'),
+            ('Total Wall Clock', 'clock.txt'),
+        )
+
+        print "_" * 80
+        for s_title, s_file in conf_map:
+            print "\n\n{title}\n{u_title}\n".format(title=s_title, u_title=("#" * len(s_title)))
+            print ''.join(difflib.ndiff(open(os.path.join(session_1, s_file)).readlines(),
+                                        open(os.path.join(session_2, s_file)).readlines())),
+        print "_" * 80
+        print
+
     def main(self):
         """
         Main
         """
-        if self.options.scenario:
+        if self.options.diff:
+            session_1, session_2 = self.options.diff.split(",")
+            return self.diff(session_1, session_2)
+        elif self.options.scenario:
             self.scenario()
         elif self.options.refresh:
             self.refresh()
