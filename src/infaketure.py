@@ -13,6 +13,7 @@ import random
 import uuid
 from xml.dom import minidom as dom
 import multiprocessing
+import shutil
 
 from infaketure import check
 from infaketure import hostnames
@@ -285,15 +286,29 @@ class Infaketure(object):
         _pcp.start()
         runner.run(callback=self.refresh)
         _pcp.stop()
-        self._save_pcp_metrics(_pcp)
-        self._save_cmdb_metadata()
+
+        # Save the results
+        session_id = time.strftime("%Y%m%d-%H%M%S", time.localtime())
+        self._save_pcp_metrics(session_id, _pcp)
+        self._save_cmdb_metadata(session_id)
+        self._save_scenario(session_id)
+
         _pcp.cleanup()
 
-    def _save_cmdb_metadata(self):
+    def _save_scenario(self, session_id):
+        """
+        Copy current scenario to the session configuration for archive purposes and further comparisons.
+        """
+        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
+        shutil.copy(self.options.scenario, os.path.join(conf_path, "scenario.conf"))
+
+    def _save_cmdb_metadata(self, session_id):
         """
         Save CMDB metadata of the tester client host and the tested SUMA installation.
         """
-        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, "conf")
+        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
         if not os.path.exists(conf_path):
             os.makedirs(conf_path)
 
@@ -322,13 +337,11 @@ class Infaketure(object):
                                                 dsp=hw_nfo.get_disk_space()))
             doc_file.close()
 
-    def _save_pcp_metrics(self, pcp):
+    def _save_pcp_metrics(self, session_id, pcp):
         """
         Save PCP metrics.
         """
-        metrics_path = os.path.join(self._pcp_metrics_path,
-                                    self.options.fqdn,
-                                    time.strftime("%Y%m%d-%H%M%S", time.localtime()))
+        metrics_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, 'data')
         if not os.path.exists(metrics_path):
             os.makedirs(metrics_path)
         for probe in sorted(pcp.probes.keys()):
@@ -348,6 +361,8 @@ class Infaketure(object):
             for ds_key in sorted(metrics.keys()):
                 descr_fh.write("{pm_key}:\t{pm_value}\n".format(pm_key=ds_key, pm_value=metrics.get(ds_key)))
             descr_fh.close()
+
+        return session_id
 
     def main(self):
         """
