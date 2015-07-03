@@ -80,7 +80,7 @@ class DBStorage(object):
         :param obj: An object
         :return: Base64 encoded string
         """
-        return base64.encodestring(pickle.dumps(obj, 0))
+        return base64.encodestring(pickle.dumps(obj, 0)).replace(os.linesep, '').strip()
 
     def _deserialize64(self, data64):
         """
@@ -300,7 +300,7 @@ class DBOperations(DBStorage):
 
         # Login info credentials
         self.cursor.execute("UPDATE credentials SET S_BODY = ? WHERE HID = ?)",
-                            (self._serialize64(profile.login_info), profile.sid,))
+                            (self._serialize64(profile.login_info), profile.sid))
 
         current_packages = self.get_host_packages(profile.sid)
         # Remove packages that was uninstalled
