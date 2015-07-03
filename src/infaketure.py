@@ -219,7 +219,7 @@ class Infaketure(object):
         opt.add_option("-p", "--password", action="store", dest="password",
                        help="Password for the administrator.")
         opt.add_option("-d", "--diff", action="store", dest="diff",
-                       help="Diff between a two paths of saved sessions.")
+                       help="Diff between a two comma separated paths of saved sessions: source,destination")
 
         self.options, self.args = opt.parse_args()
 
