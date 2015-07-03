@@ -7,6 +7,7 @@
 import sys
 import os
 import time
+import datetime
 import getpass
 from optparse import OptionParser
 import random
@@ -284,7 +285,7 @@ class Infaketure(object):
             if cfg_key.startswith(metric_prefix):
                 _pcp.probes[cfg_key.replace(metric_prefix, "")] = cfg_value or None
         _pcp.start()
-        runner.run(callback=self.refresh)
+        s_twc = runner.run(callback=self.refresh)
         _pcp.stop()
 
         # Save the results
@@ -292,6 +293,7 @@ class Infaketure(object):
         self._save_pcp_metrics(session_id, _pcp)
         self._save_cmdb_metadata(session_id)
         self._save_scenario(session_id)
+        self._save_twc(session_id, s_twc)
 
         _pcp.cleanup()
 
@@ -303,6 +305,33 @@ class Infaketure(object):
         if not os.path.exists(conf_path):
             os.makedirs(conf_path)
         shutil.copy(self.options.scenario, os.path.join(conf_path, "scenario.conf"))
+
+    def _time_unix2iso8601(self, ticks):
+        """
+        Convert Unix ticks to the ISO-8601 time.
+        """
+        t_snp = time.localtime(ticks)
+        return datetime.datetime(t_snp.tm_year, t_snp.tm_mday, t_snp.tm_hour,
+                                 t_snp.tm_hour, t_snp.tm_min, t_snp.tm_sec).isoformat(' ')
+
+    def _save_twc(self, session_id, s_twc):
+        """
+        Save total wall clock.
+        """
+        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
+
+        ticks_start, ticks_end = s_twc
+        s_twc_fh = open(os.path.join(conf_path, "clock.txt"), "w")
+        s_twc_fh.write("Start:\n      Unix: {s_tcs}\n  ISO 8601: {s_iso}\n\nEnd:\n      Unix: {e_tcs}\n"
+                       "  ISO 8601: {e_iso}\n\nDuration:\n   Seconds: {d_tcs}\n".format(
+                           s_tcs=int(round(ticks_start)),
+                           s_iso=self._time_unix2iso8601(ticks_start),
+                           e_tcs=int(round(ticks_end)),
+                           e_iso=self._time_unix2iso8601(ticks_end),
+                           d_tcs=round(ticks_end - ticks_start, 2)))
+        s_twc_fh.close()
 
     def _save_cmdb_metadata(self, session_id):
         """
