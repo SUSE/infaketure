@@ -330,6 +330,7 @@ class Infaketure(object):
         """
         Copy current scenario to the session configuration for archive purposes and further comparisons.
         """
+        # TODO: This pathfinding and its creation is a subject for later refactoring
         conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
         if not os.path.exists(conf_path):
             os.makedirs(conf_path)
@@ -347,6 +348,7 @@ class Infaketure(object):
         """
         Save total wall clock.
         """
+        # TODO: This pathfinding and its creation is a subject for later refactoring
         conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
         if not os.path.exists(conf_path):
             os.makedirs(conf_path)
@@ -366,6 +368,7 @@ class Infaketure(object):
         """
         Save CMDB metadata of the tester client host and the tested SUMA installation.
         """
+        # TODO: This pathfinding and its creation is a subject for later refactoring
         conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
         if not os.path.exists(conf_path):
             os.makedirs(conf_path)
@@ -399,6 +402,7 @@ class Infaketure(object):
         """
         Save PCP metrics.
         """
+        # TODO: This pathfinding and its creation is a subject for later refactoring
         metrics_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, 'data')
         if not os.path.exists(metrics_path):
             os.makedirs(metrics_path)
