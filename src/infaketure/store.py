@@ -6,10 +6,10 @@
 import sqlite3
 import re
 import os
-import sys
 from infaketure import cli_msg
 from infaketure import ERROR
 import pickle
+import base64
 
 try:
     from up2date_client import rhnreg
@@ -73,6 +73,22 @@ class DBStorage(object):
 
         self._run_init_queries()
         self.connection.commit()
+
+    def _serialize64(self, obj):
+        """
+        Serialize an object to a string.
+        :param obj: An object
+        :return: Base64 encoded string
+        """
+        return base64.encodestring(pickle.dumps(obj, 0)).replace(os.linesep, '').strip()
+
+    def _deserialize64(self, data64):
+        """
+        Deserialize an object from a base64 string.
+        :param data64: Base64 encoded string
+        :return: A Python object
+        """
+        return pickle.loads(base64.decodestring(data64))
 
     def _run_init_queries(self):
         """
@@ -179,7 +195,7 @@ class DBOperations(DBStorage):
         """
         self.cursor.execute("SELECT S_BODY FROM CREDENTIALS WHERE HID = ?", (host_id,))
         for nfo in self.cursor.fetchall():
-            return pickle.loads(nfo[0])
+            return self._deserialize64(nfo[0])
 
     def delete_host_by_id(self, host_id):
         """
@@ -241,7 +257,7 @@ class DBOperations(DBStorage):
 
         # Credentials
         self.cursor.execute("INSERT INTO credentials (HID, S_BODY) VALUES (?, ?)",
-                            (host_id, pickle.dumps(profile.login_info, 0),))
+                            (host_id, self._serialize64(profile.login_info),))
 
         # Packages
         table_name = "SYS{0}PKG".format(profile.sid)
@@ -284,7 +300,7 @@ class DBOperations(DBStorage):
 
         # Login info credentials
         self.cursor.execute("UPDATE credentials SET S_BODY = ? WHERE HID = ?)",
-                            (pickle.dumps(profile.login_info, 0), profile.sid,))
+                            (self._serialize64(profile.login_info), profile.sid))
 
         current_packages = self.get_host_packages(profile.sid)
         # Remove packages that was uninstalled

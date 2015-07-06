@@ -7,12 +7,15 @@
 import sys
 import os
 import time
+import datetime
 import getpass
 from optparse import OptionParser
 import random
 import uuid
 from xml.dom import minidom as dom
 import multiprocessing
+import shutil
+import difflib
 
 from infaketure import check
 from infaketure import hostnames
@@ -21,6 +24,8 @@ from infaketure import spaceapi
 from infaketure import loadproc
 from infaketure.pcp import pcpconn
 from infaketure import procpool
+from infaketure.cmdbmeta import HardwareInfo
+from infaketure.cmdbmeta import SoftwareInfo
 
 sys.path.append("/usr/share/rhn/")
 
@@ -137,7 +142,7 @@ class XMLData(object):
         return str(self.members.get(name)) or 'N/A'
 
 
-class VirtualRegistration(object):
+class Infaketure(object):
     """
     Virtual registration.
     """
@@ -154,11 +159,11 @@ class VirtualRegistration(object):
         self.procpool = procpool.Pool()
         self.verbose = False
         self._pcp_metrics_path = None
-        self._initialize()
 
-        self.api = spaceapi.SpaceAPI("http://{0}/rpc/api".format(self.options.fqdn))
-        rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(self.options.fqdn))
-        rhnreg.getCaps()
+        if self._initialize():
+            self.api = spaceapi.SpaceAPI("http://{0}/rpc/api".format(self.options.fqdn))
+            rhnreg.cfg.set("serverURL", "https://{0}/XMLRPC".format(self.options.fqdn))
+            rhnreg.getCaps()
 
         def _getProductProfile():
             '''
@@ -195,7 +200,7 @@ class VirtualRegistration(object):
                        help="Specify a base name for a fake hosts, so it will go incrementally, "
                             "like FAKE0, FAKE1 ... . By default random host names if cracklib is installed "
                             "or 'test' as base name.")
-        opt.add_option("-d", "--database-file", action="store", dest="dbfile",
+        opt.add_option("-e", "--database-file", action="store", dest="dbfile",
                        help="Specify a path to SQLite3 database. "
                             "Default is '{0}'.".format(_dbstore_file))
         opt.add_option("-t", "--pcp-metrics", action="store", dest="pcp_path",
@@ -213,8 +218,20 @@ class VirtualRegistration(object):
                        help="User ID for the administrator.")
         opt.add_option("-p", "--password", action="store", dest="password",
                        help="Password for the administrator.")
+        opt.add_option("-d", "--diff", action="store", dest="diff",
+                       help="Diff between a two space separated paths of saved sessions: source destination")
 
         self.options, self.args = opt.parse_args()
+
+        if self.options.diff:
+            # argparse allows space-separated values, but is
+            # not available on Python 2.6 which is still in use.
+            f_idx = sys.argv.index(self.options.diff)
+            if len(sys.argv) > f_idx + 1:
+                self.options.diff = sorted([self.options.diff, sys.argv[f_idx + 1]])
+            else:
+                raise Infaketure.VRException("Should be two saved sessions paths specified")
+            return False
 
         # Check the required parameters
         if not self.options.fqdn or ((not self.options.refresh
@@ -229,13 +246,13 @@ class VirtualRegistration(object):
         if self.options.cacert:
             rhnreg.cfg.set("sslCACert", self.options.cacert)
         if not os.path.exists(rhnreg.cfg["sslCACert"]):
-            raise VirtualRegistration.VRException(
+            raise Infaketure.VRException(
                 "SSL CA Certificate was not found at {0}".format(rhnreg.cfg["sslCACert"]))
 
         try:
             self.amount = int(self.options.amount and self.options.amount or "5")
         except Exception as error:
-            raise VirtualRegistration.VRException("Wrong amount of fake hosts: {0}".format(self.options.amount))
+            raise Infaketure.VRException("Wrong amount of fake hosts: {0}".format(self.options.amount))
 
         if self.options.dbfile:
             _dbstore_file = self.options.dbfile
@@ -248,11 +265,13 @@ class VirtualRegistration(object):
 
         if self.options.flush:
             if not self.options.user or not self.options.password:
-                raise VirtualRegistration.VRException(
+                raise Infaketure.VRException(
                     "User and/or password must be given to authorise against SUSE Manager.")
 
         self.db = store.DBOperations(_dbstore_file)
         self.db.open()
+
+        return True
 
     def scenario(self):
         """
@@ -281,19 +300,100 @@ class VirtualRegistration(object):
             if cfg_key.startswith(metric_prefix):
                 _pcp.probes[cfg_key.replace(metric_prefix, "")] = cfg_value or None
         _pcp.start()
-        runner.run(callback=self.refresh)
+        s_twc = runner.run(callback=self.refresh)
         _pcp.stop()
-        self._save_pcp_metrics(_pcp)
+
+        # Save the results
+        session_id = time.strftime("%Y%m%d-%H%M%S", time.localtime())
+        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
+
+        metrics_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "data")
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
+
+        self._save_pcp_metrics(metrics_path, _pcp)
+        self._save_cmdb_metadata(conf_path)
+        self._save_scenario(conf_path)
+        self._save_twc(conf_path, s_twc)
+        self._save_db_metadata(conf_path)
+
         _pcp.cleanup()
 
-    def _save_pcp_metrics(self, pcp):
+    def _save_db_metadata(self, conf_path):
+        """
+        Describe the database of the registered systems.
+        """
+        db_meta_h = open(os.path.join(conf_path, "db-meta.conf"), "w")
+        db_meta_h.write("# Number of registered hosts\n"
+                        "registered hosts = {0}\n".format(len(self.db.get_host_profiles())))
+        db_meta_h.close()
+
+    def _save_scenario(self, conf_path):
+        """
+        Copy current scenario to the session configuration for archive purposes and further comparisons.
+        """
+        shutil.copy(self.options.scenario, os.path.join(conf_path, "scenario.conf"))
+
+    def _time_unix2iso8601(self, ticks):
+        """
+        Convert Unix ticks to the ISO-8601 time.
+        """
+        t_snp = time.localtime(ticks)
+        return datetime.datetime(t_snp.tm_year, t_snp.tm_mday, t_snp.tm_hour,
+                                 t_snp.tm_hour, t_snp.tm_min, t_snp.tm_sec).isoformat(' ')
+
+    def _save_twc(self, conf_path, s_twc):
+        """
+        Save total wall clock.
+        """
+        ticks_start, ticks_end = s_twc
+        s_twc_fh = open(os.path.join(conf_path, "clock.txt"), "w")
+        s_twc_fh.write("Start:\n      Unix: {s_tcs}\n  ISO 8601: {s_iso}\n\nEnd:\n      Unix: {e_tcs}\n"
+                       "  ISO 8601: {e_iso}\n\nDuration:\n   Seconds: {d_tcs}\n".format(
+                           s_tcs=int(round(ticks_start)),
+                           s_iso=self._time_unix2iso8601(ticks_start),
+                           e_tcs=int(round(ticks_end)),
+                           e_iso=self._time_unix2iso8601(ticks_end),
+                           d_tcs=round(ticks_end - ticks_start, 2)))
+        s_twc_fh.close()
+
+    def _save_cmdb_metadata(self, conf_path):
+        """
+        Save CMDB metadata of the tester client host and the tested SUMA installation.
+        """
+        # Get software
+        for doc_file, sft_pks in (('client-software.txt', SoftwareInfo('localhost').get_pkg_info('python-*')),
+                                  ('server-software.txt', SoftwareInfo(self.options.fqdn, user=getpass.getuser())
+                                      .get_pkg_info('postgres*', 'java*'))):
+            doc_file = open(os.path.join(conf_path, doc_file), 'w')
+            for pkg_name in sorted(sft_pks.keys()):
+                doc_file.write("{name}:\n  Vendor:  \"{vendor}\"\n".format(
+                    name=pkg_name, vendor=sft_pks.get(pkg_name).get('vendor')))
+                doc_file.write("  Version: {version}\n  Release: {release}\n\n".format(
+                    version=sft_pks.get(pkg_name).get('version'),
+                    release=sft_pks.get(pkg_name).get('release')))
+            doc_file.close()
+
+        # Get hardware
+        for doc_file, hw_nfo in (('client-hardware.txt', HardwareInfo('localhost')),
+                                 ('server-hardware.txt', HardwareInfo(self.options.fqdn, user=getpass.getuser()))):
+            doc_file = open(os.path.join(conf_path, doc_file), 'w')
+            doc_file.write("CPU\n===\n\n{cpu}\n\n\nMemory\n======\n\n{memory}\n\n\n"
+                           "Disks\n=====\n\n{disks}\n\n\nDisk Space\n==========\n\n"
+                           "{dsp}\n\n\n".format(cpu=hw_nfo.get_cpu(),
+                                                memory=hw_nfo.get_memory(),
+                                                disks=hw_nfo.get_disk_drives(),
+                                                dsp=hw_nfo.get_disk_space()))
+            doc_file.close()
+
+    def _save_pcp_metrics(self, metrics_path, pcp):
         """
         Save PCP metrics.
         """
-        metrics_path = os.path.join(self._pcp_metrics_path,
-                                    self.options.fqdn,
-                                    time.strftime("%Y%m%d-%H%M%S", time.localtime()))
-        os.makedirs(metrics_path)
+        if not os.path.exists(metrics_path):
+            os.makedirs(metrics_path)
         for probe in sorted(pcp.probes.keys()):
             metrics = pcp.get_metrics(probe)
 
@@ -312,11 +412,39 @@ class VirtualRegistration(object):
                 descr_fh.write("{pm_key}:\t{pm_value}\n".format(pm_key=ds_key, pm_value=metrics.get(ds_key)))
             descr_fh.close()
 
+    def diff(self, session_1, session_2):
+        """
+        Display full diff between two sessions.
+        """
+        session_1 = os.path.join(session_1, "conf")
+        session_2 = os.path.join(session_2, "conf")
+        if not os.path.exists(session_1) or not os.path.exists(session_2):
+            raise Infaketure.VRException("Sessions cannot be found. Please make sure both paths are correct")
+
+        conf_map = (
+            ('Client Hardware', 'client-hardware.txt'),
+            ('Client Software', 'client-software.txt'),
+            ('Server Hardware', 'server-hardware.txt'),
+            ('Server Software', 'server-software.txt'),
+            ('Total Wall Clock', 'clock.txt'),
+        )
+
+        print "_" * 80
+        for s_title, s_file in conf_map:
+            print "\n\n{title}\n{u_title}\n".format(title=s_title, u_title=("#" * len(s_title)))
+            print ''.join(difflib.ndiff(open(os.path.join(session_1, s_file)).readlines(),
+                                        open(os.path.join(session_2, s_file)).readlines())),
+        print "_" * 80
+        print
+
     def main(self):
         """
         Main
         """
-        if self.options.scenario:
+        if self.options.diff:
+            session_1, session_2 = self.options.diff
+            return self.diff(session_1, session_2)
+        elif self.options.scenario:
             self.scenario()
         elif self.options.refresh:
             self.refresh()
@@ -328,8 +456,8 @@ class VirtualRegistration(object):
                 fh.add_history(profile.hostname)
             idx_offset = self.db.get_next_id("hosts") - 1
             for idx in range(vr.amount):
-                self.procpool.run(multiprocessing.Process(target=self.register,
-                                                          args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)), join=True)
+                self.procpool.run(multiprocessing.Process(
+                    target=self.register, args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)), join=True)
         self.procpool.join()
         self.db.vacuum()
         self.db.close()
@@ -416,9 +544,9 @@ class VirtualRegistration(object):
 
 if __name__ == '__main__':
     try:
-        vr = VirtualRegistration()
+        vr = Infaketure()
         vr.main()
-    except VirtualRegistration.VRException as ex:
+    except Infaketure.VRException as ex:
         print "Error:\n  {0}\n".format(ex)
     except Exception as ex:
         raise ex

@@ -103,10 +103,12 @@ class LoadScenarioCaller(object):
         cycle = int(self.config.get("loop.cycle", 0))
         pause = int(self.config.get("loop.sleep", 0))
 
+        s_twc = time.time()  # Total wall clock time
+
         iteration = 0
         while True:
             if cycle and iteration == cycle:
-                break
+                return s_twc, time.time()
             self.__call()
             if callback is not None:
                 callback(*cb_args, **cb_kwargs)
