@@ -452,8 +452,8 @@ class Infaketure(object):
                 fh.add_history(profile.hostname)
             idx_offset = self.db.get_next_id("hosts") - 1
             for idx in range(vr.amount):
-                self.procpool.run(multiprocessing.Process(target=self.register,
-                                                          args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)), join=True)
+                self.procpool.run(multiprocessing.Process(
+                    target=self.register, args=(CMDBProfile(fh(), idx=(idx + idx_offset)),)), join=True)
         self.procpool.join()
         self.db.vacuum()
         self.db.close()
