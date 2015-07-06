@@ -305,35 +305,35 @@ class Infaketure(object):
 
         # Save the results
         session_id = time.strftime("%Y%m%d-%H%M%S", time.localtime())
-        self._save_pcp_metrics(session_id, _pcp)
-        self._save_cmdb_metadata(session_id)
-        self._save_scenario(session_id)
-        self._save_twc(session_id, s_twc)
-        self._save_db_metadata(session_id)
-
-        _pcp.cleanup()
-
-    def _save_db_metadata(self, session_id):
-        """
-        Describe the database of the registered systems.
-        """
-        # TODO: This pathfinding and its creation is a subject for later refactoring
         conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
         if not os.path.exists(conf_path):
             os.makedirs(conf_path)
+
+        metrics_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "data")
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
+
+        self._save_pcp_metrics(metrics_path, _pcp)
+        self._save_cmdb_metadata(conf_path)
+        self._save_scenario(conf_path)
+        self._save_twc(conf_path, s_twc)
+        self._save_db_metadata(conf_path)
+
+        _pcp.cleanup()
+
+    def _save_db_metadata(self, conf_path):
+        """
+        Describe the database of the registered systems.
+        """
         db_meta_h = open(os.path.join(conf_path, "db-meta.conf"), "w")
         db_meta_h.write("# Number of registered hosts\n"
                         "registered hosts = {0}\n".format(len(self.db.get_host_profiles())))
         db_meta_h.close()
 
-    def _save_scenario(self, session_id):
+    def _save_scenario(self, conf_path):
         """
         Copy current scenario to the session configuration for archive purposes and further comparisons.
         """
-        # TODO: This pathfinding and its creation is a subject for later refactoring
-        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
-        if not os.path.exists(conf_path):
-            os.makedirs(conf_path)
         shutil.copy(self.options.scenario, os.path.join(conf_path, "scenario.conf"))
 
     def _time_unix2iso8601(self, ticks):
@@ -344,15 +344,10 @@ class Infaketure(object):
         return datetime.datetime(t_snp.tm_year, t_snp.tm_mday, t_snp.tm_hour,
                                  t_snp.tm_hour, t_snp.tm_min, t_snp.tm_sec).isoformat(' ')
 
-    def _save_twc(self, session_id, s_twc):
+    def _save_twc(self, conf_path, s_twc):
         """
         Save total wall clock.
         """
-        # TODO: This pathfinding and its creation is a subject for later refactoring
-        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
-        if not os.path.exists(conf_path):
-            os.makedirs(conf_path)
-
         ticks_start, ticks_end = s_twc
         s_twc_fh = open(os.path.join(conf_path, "clock.txt"), "w")
         s_twc_fh.write("Start:\n      Unix: {s_tcs}\n  ISO 8601: {s_iso}\n\nEnd:\n      Unix: {e_tcs}\n"
@@ -364,15 +359,10 @@ class Infaketure(object):
                            d_tcs=round(ticks_end - ticks_start, 2)))
         s_twc_fh.close()
 
-    def _save_cmdb_metadata(self, session_id):
+    def _save_cmdb_metadata(self, conf_path):
         """
         Save CMDB metadata of the tester client host and the tested SUMA installation.
         """
-        # TODO: This pathfinding and its creation is a subject for later refactoring
-        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
-        if not os.path.exists(conf_path):
-            os.makedirs(conf_path)
-
         # Get software
         for doc_file, sft_pks in (('client-software.txt', SoftwareInfo('localhost').get_pkg_info('python-*')),
                                   ('server-software.txt', SoftwareInfo(self.options.fqdn, user=getpass.getuser())
@@ -398,12 +388,10 @@ class Infaketure(object):
                                                 dsp=hw_nfo.get_disk_space()))
             doc_file.close()
 
-    def _save_pcp_metrics(self, session_id, pcp):
+    def _save_pcp_metrics(self, metrics_path, pcp):
         """
         Save PCP metrics.
         """
-        # TODO: This pathfinding and its creation is a subject for later refactoring
-        metrics_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, 'data')
         if not os.path.exists(metrics_path):
             os.makedirs(metrics_path)
         for probe in sorted(pcp.probes.keys()):
@@ -423,8 +411,6 @@ class Infaketure(object):
             for ds_key in sorted(metrics.keys()):
                 descr_fh.write("{pm_key}:\t{pm_value}\n".format(pm_key=ds_key, pm_value=metrics.get(ds_key)))
             descr_fh.close()
-
-        return session_id
 
     def diff(self, session_1, session_2):
         """
