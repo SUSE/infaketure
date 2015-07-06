@@ -219,11 +219,18 @@ class Infaketure(object):
         opt.add_option("-p", "--password", action="store", dest="password",
                        help="Password for the administrator.")
         opt.add_option("-d", "--diff", action="store", dest="diff",
-                       help="Diff between a two comma separated paths of saved sessions: source,destination")
+                       help="Diff between a two space separated paths of saved sessions: source destination")
 
         self.options, self.args = opt.parse_args()
 
         if self.options.diff:
+            # argparse allows space-separated values, but is
+            # not available on Python 2.6 which is still in use.
+            f_idx = sys.argv.index(self.options.diff)
+            if len(sys.argv) > f_idx + 1:
+                self.options.diff = sorted([self.options.diff, sys.argv[f_idx + 1]])
+            else:
+                raise Infaketure.VRException("Should be two saved sessions paths specified")
             return False
 
         # Check the required parameters
@@ -431,7 +438,7 @@ class Infaketure(object):
         Main
         """
         if self.options.diff:
-            session_1, session_2 = self.options.diff.split(",")
+            session_1, session_2 = self.options.diff
             return self.diff(session_1, session_2)
         elif self.options.scenario:
             self.scenario()
