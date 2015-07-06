@@ -309,8 +309,22 @@ class Infaketure(object):
         self._save_cmdb_metadata(session_id)
         self._save_scenario(session_id)
         self._save_twc(session_id, s_twc)
+        self._save_db_metadata(session_id)
 
         _pcp.cleanup()
+
+    def _save_db_metadata(self, session_id):
+        """
+        Describe the database of the registered systems.
+        """
+        # TODO: This pathfinding and its creation is a subject for later refactoring
+        conf_path = os.path.join(self._pcp_metrics_path, self.options.fqdn, session_id, "conf")
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
+        db_meta_h = open(os.path.join(conf_path, "db-meta.conf"), "w")
+        db_meta_h.write("# Number of registered hosts\n"
+                        "registered hosts = {0}\n".format(len(self.db.get_host_profiles())))
+        db_meta_h.close()
 
     def _save_scenario(self, session_id):
         """
