@@ -71,7 +71,7 @@ class GNUPlotExporter(object):
 
         return parsed
 
-    def generate(self):
+    def generate(self, absolute):
         """
         Generate GNU Plot scripts.
 
@@ -86,7 +86,12 @@ class GNUPlotExporter(object):
                 if directive.startswith("meta "):
                     structure["meta"][directive.split(" ")[-1]] = self._config.get(section, directive)
                 elif directive.startswith("probe "):
-                    plot = {"plot": directive.split(" ")[-1] + ".data"}
+                    data_filename = directive.split(" ")[-1] + ".data"
+                    if absolute:
+                        probe_data = os.path.join(os.path.abspath(self._path), "data", data_filename)
+                    else:
+                        probe_data = os.path.join("..", "data", data_filename)
+                    plot = {"plot": probe_data}
                     for key, value in self._parse_options(self._config.get(section, directive)).items():
                         if key == "column":
                             plot["u"] = value
@@ -115,8 +120,10 @@ class GNUPlotExporter(object):
 if __name__ == '__main__':
     args = OptionParser(version="Bloody Alpha, 0.1", prog='infaketure-plot',
                         description='Generate GNU Plot views from the Infaketure PCP data.')
-    args.add_option("-p", "--path", help="Path to the PCP snapshot", action="store")
-    args.add_option("-c", "--config", help="Path to the configuration", action="store")
+    args.add_option("-p", "--path", dest="path", help="Path to the PCP snapshot", action="store")
+    args.add_option("-c", "--config", dest="config", help="Path to the configuration", action="store")
+    args.add_option("-a", "--absolute", dest="absolute", help="Keep absolute paths in the GNU Plot scripts",
+                    action="store_true")
     if not [elm for elm in sys.argv if elm.startswith("--path")]:
         sys.argv.append("--help")
     options, args = args.parse_args()
@@ -133,8 +140,12 @@ if __name__ == '__main__':
         print 'Error: snapshot "{snapshot}" does not seems to be a valid'.format(snapshot=options.path)
         sys.exit(1)
 
-    for fname, script in GNUPlotExporter(options.config, options.path).generate().items():
-        fname = os.path.join(options.path, fname)
+    dest_path = os.path.join(options.path, "bin")
+    if not os.path.exists(dest_path):
+        os.makedirs(dest_path)
+
+    for fname, script in GNUPlotExporter(options.config, options.path).generate(options.absolute).items():
+        fname = os.path.join(dest_path, fname)
         print "Writing {script} ...\t".format(script=fname),
         scr_fh = open(fname, "w")
         scr_fh.write(script)
